@@ -74,23 +74,21 @@ jobs:
           port: ${{ secrets.NAS_SSH_PORT }}
           script: |
             export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
-            DOCKER=$(which docker 2>/dev/null || echo /usr/local/bin/docker)
-            COMPOSE="$DOCKER compose"
 
             echo "📥 Neues Image holen..."
-            $DOCKER pull ghcr.io/spifroca/spifroca-app:latest
+            sudo docker pull ghcr.io/spifroca/spifroca-app:latest
 
             echo "🔄 Container neu starten..."
             mkdir -p /volume1/docker/spifroca
             cd /volume1/docker/spifroca
-            $COMPOSE -f compose-live.yml down || true
-            $COMPOSE -f compose-live.yml up -d
+            sudo docker compose -f compose-live.yml down || true
+            sudo docker compose -f compose-live.yml up -d
 
             echo "⏳ Warte bis App bereit ist..."
             sleep 20
 
             echo "🗄️ Datenbank migrieren..."
-            $DOCKER exec spifroca_app npx prisma migrate deploy || true
+            sudo docker exec spifroca_app npx prisma migrate deploy || true
 
             echo "✅ Deployment erfolgreich!"
-            $DOCKER ps | grep spifroca
+            sudo docker ps | grep spifroca
