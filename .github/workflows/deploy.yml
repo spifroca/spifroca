@@ -1,0 +1,89 @@
+name: 🚀 Build & Deploy spifroca
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/spifroca-app
+
+jobs:
+  build:
+    name: 🔨 Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 📥 Code auschecken
+        uses: actions/checkout@v4
+
+      - name: 🔐 Bei GitHub Container Registry anmelden
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Image-Tags generieren
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: ⚡ Docker Buildx einrichten
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔨 Image bauen & pushen
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.synology
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: 🖥️ Deploy auf Synology NAS
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: 🔒 Tailscale VPN verbinden
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: 🚀 NAS via SSH aktualisieren
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          password: ${{ secrets.NAS_PASSWORD }}
+          port:     ${{ secrets.NAS_SSH_PORT }}
+          script: |
+            echo "📥 Neues Image holen..."
+            docker pull ghcr.io/${{ github.repository_owner }}/spifroca-app:latest
+
+            echo "🔄 Container neu starten..."
+            cd /volume1/docker/spifroca
+            docker compose -f compose-live.yml down
+            docker compose -f compose-live.yml up -d
+
+            echo "⏳ Warte bis App bereit ist..."
+            sleep 15
+
+            echo "🗄️ Datenbank migrieren..."
+            docker exec spifroca_app npx prisma migrate deploy
+
+            echo "✅ Deployment erfolgreich!"
+            docker ps | grep spifroca

@@ -1,0 +1,45 @@
+name: ✅ Pull Request Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: 🔍 Code prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Dependencies installieren
+        run: npm ci
+      
+      - name: TypeScript prüfen
+        run: npx tsc --noEmit
+      
+      - name: Prisma Schema validieren
+        run: npx prisma validate
+
+  build-test:
+    name: 🔨 Build testen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Test-Build (kein Push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.synology
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

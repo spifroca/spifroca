@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --spifroca-red:      #c0392b;
+  --spifroca-red-dark: #a93226;
+  --spifroca-red-bg:   #fce8e8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 13px;
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f0f0f0; }
+::-webkit-scrollbar-thumb { background: #c0c0c0; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+
+/* Focus */
+:focus-visible { outline: 2px solid var(--spifroca-red); outline-offset: 1px; }
+
+/* Table base */
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; }
