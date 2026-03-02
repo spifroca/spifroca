@@ -1,29 +1,43 @@
 "use client";
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import Link from "next/link";
 
+// ─── Real North Farben ───────────────────────────────────────────────────────
+const RN = {
+  navy:      "#1C2B3A",
+  navyDark:  "#111d28",
+  navyLight: "#243447",
+  gold:      "#C8A96E",
+  goldDark:  "#b8935a",
+  bg:        "#F5F4F2",
+  white:     "#ffffff",
+};
+
 const NAV_ITEMS = [
-  { href: "/dashboard/projekte",          label: "Projekte",           icon: "🏠" },
-  { href: "/dashboard/kostenplanung",     label: "Kostenplanung",      icon: "💰" },
-  { href: "/dashboard/ausschreibung",     label: "Ausschreibung",      icon: "📋" },
-  { href: "/dashboard/termine",           label: "Termine",            icon: "📅" },
-  { href: "/dashboard/risiken",           label: "Risiken & Chancen",  icon: "⚡" },
-  { href: "/dashboard/personen",          label: "Personen",           icon: "👥" },
+  { href: "/dashboard/projekte",           label: "Projekte",           icon: "🏗️" },
+  { href: "/dashboard/kostenplanung",      label: "Kostenplanung",      icon: "💰" },
+  { href: "/dashboard/ausschreibung",      label: "Ausschreibung",      icon: "📋" },
+  { href: "/dashboard/termine",            label: "Termine",            icon: "📅" },
+  { href: "/dashboard/risiken",            label: "Risiken & Chancen",  icon: "⚡" },
 ];
 
-const ADMIN_NAV = [
-  { href: "/dashboard/benutzerverwaltung", label: "Benutzerverwaltung", icon: "👥" },
+const KONTAKT_ITEMS = [
+  { href: "/dashboard/personen",           label: "Kontakte",           icon: "👥" },
+];
+
+const ADMIN_ITEMS = [
+  { href: "/dashboard/benutzerverwaltung", label: "Benutzerverwaltung", icon: "🔐" },
 ];
 
 const ROLLE_COLOR: Record<string, string> = {
-  ADMINISTRATOR:    "#c0392b",
-  PROJEKTLEITER:    "#3b82f6",
-  CONTROLLING:      "#8b5cf6",
-  EXTERNER_PLANER:  "#f59e0b",
-  BETRACHTER:       "#6b7280",
+  ADMINISTRATOR:   "#C8A96E",
+  PROJEKTLEITER:   "#3b82f6",
+  CONTROLLING:     "#8b5cf6",
+  EXTERNER_PLANER: "#f59e0b",
+  BETRACHTER:      "#6b7280",
 };
 
 const ROLLE_LABEL: Record<string, string> = {
@@ -34,112 +48,145 @@ const ROLLE_LABEL: Record<string, string> = {
   BETRACHTER:      "Betrachter",
 };
 
-interface Props {
-  session: Session;
-  children: React.ReactNode;
-}
+interface Props { session: Session; children: React.ReactNode; }
 
 export function DashboardClient({ session, children }: Props) {
   const pathname = usePathname();
-  const router   = useRouter();
   const user     = session.user as any;
   const rolle    = user?.rolle || "BETRACHTER";
   const isAdmin  = rolle === "ADMINISTRATOR";
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [open, setOpen] = useState(true);
 
-  const initials = (user?.name || "??").split(" ").map((n: string) => n[0]).join("").toUpperCase();
+  const initials = (user?.name || "??")
+    .split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const NavLink = ({ href, label, icon }: { href: string; label: string; icon: string }) => {
+    const active = pathname.startsWith(href);
+    return (
+      <Link href={href} style={{
+        display: "flex", alignItems: "center", gap: 10,
+        padding: open ? "9px 12px" : "9px 0",
+        justifyContent: open ? "flex-start" : "center",
+        marginBottom: 2, borderRadius: 7,
+        background: active ? RN.gold : "transparent",
+        color: active ? RN.navy : "#94a3b8",
+        textDecoration: "none",
+        fontWeight: active ? 700 : 400,
+        fontSize: 13, whiteSpace: "nowrap",
+        borderLeft: active ? `3px solid ${RN.goldDark}` : "3px solid transparent",
+        transition: "all 0.15s",
+      }}
+        onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = RN.navyLight; (e.currentTarget as HTMLElement).style.color = RN.white; }}}
+        onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}}
+      >
+        <span style={{ fontSize: 16, flexShrink: 0, width: 20, textAlign: "center" }}>{icon}</span>
+        {open && <span>{label}</span>}
+      </Link>
+    );
+  };
+
+  const SectionLabel = ({ label }: { label: string }) => open ? (
+    <div style={{ fontSize: 9, color: "#475569", textTransform: "uppercase", letterSpacing: "1px", padding: "4px 12px 6px", fontWeight: 700 }}>{label}</div>
+  ) : null;
+
+  const Divider = () => (
+    <div style={{ margin: "10px 0 8px", borderTop: `1px solid ${RN.navyLight}` }} />
+  );
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden", fontFamily:"Segoe UI, Helvetica Neue, Arial, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", fontFamily: "Segoe UI, Helvetica Neue, Arial, sans-serif" }}>
 
       {/* ── Topbar ─────────────────────────────────────────────────────────── */}
-      <header style={{ height:32, background:"#c0392b", color:"#fff", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"0 16px", flexShrink:0, zIndex:50 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          {/* Spiderfrog Logo */}
+      <header style={{
+        height: 48, background: RN.navyDark, color: RN.white,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "0 20px", flexShrink: 0, zIndex: 50,
+        borderBottom: `2px solid ${RN.gold}`,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <img
             src="https://spiderfrog.ch/wp-content/uploads/Subless_White.png"
             alt="spifroca"
-            style={{ height:22, width:"auto", objectFit:"contain" }}
-            onError={(e) => { (e.target as HTMLImageElement).style.display="none"; }}
+            style={{ height: 24, objectFit: "contain" }}
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
-          <span style={{ fontWeight:800, fontSize:13, letterSpacing:"0.5px", color:"#fff" }}>spifroca</span>
-          <span style={{ opacity:.5, fontSize:12 }}>Bauprojektmanagement</span>
+          <div style={{ width: 1, height: 20, background: RN.gold + "55" }} />
+          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: "1px", color: RN.gold }}>spifroca</span>
+          <span style={{ opacity: 0.4, fontSize: 12 }}>Bauprojektmanagement</span>
         </div>
-        <div style={{ display:"flex", alignItems:"center", gap:16 }}>
-          <span style={{ fontSize:11, opacity:.8 }}>👤 {user?.name}</span>
-          <span style={{ fontSize:11, opacity:.6, cursor:"pointer" }}>🔄 Visumsvertretung</span>
-          <button onClick={() => signOut({ callbackUrl:"/auth/login" })} style={{ fontSize:11, opacity:.7, cursor:"pointer", background:"none", border:"none", color:"#fff" }}>
-            🔒 Abmelden
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 12, color: "#94a3b8" }}>👤 {user?.name}</span>
+          <button onClick={() => signOut({ callbackUrl: "/auth/login" })}
+            style={{ fontSize: 12, color: "#94a3b8", cursor: "pointer", background: "none", border: "1px solid #94a3b844", borderRadius: 5, padding: "3px 10px" }}>
+            Abmelden
           </button>
         </div>
       </header>
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-        <aside style={{ width: sidebarOpen ? 220 : 52, background:"#1a1d26", borderRight:"1px solid #2a2d3a", display:"flex", flexDirection:"column", transition:"width 0.2s", flexShrink:0, overflow:"hidden" }}>
+        <aside style={{
+          width: open ? 220 : 52, background: RN.navy,
+          display: "flex", flexDirection: "column",
+          transition: "width 0.2s", flexShrink: 0,
+          borderRight: `1px solid ${RN.navyLight}`,
+        }}>
 
-          {/* Toggle */}
-          <div style={{ padding:"10px 12px", display:"flex", justifyContent: sidebarOpen?"flex-end":"center", borderBottom:"1px solid #2a2d3a" }}>
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ background:"none", border:"none", color:"#666", cursor:"pointer", fontSize:16, padding:2 }}>
-              {sidebarOpen ? "◀" : "▶"}
+          {/* Toggle Button */}
+          <div style={{ padding: "10px 12px", display: "flex", justifyContent: open ? "flex-end" : "center", borderBottom: `1px solid ${RN.navyLight}` }}>
+            <button onClick={() => setOpen(!open)}
+              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 14, padding: 2 }}>
+              {open ? "◀" : "▶"}
             </button>
           </div>
 
-          {/* Nav Items */}
-          <nav style={{ padding:"8px 8px", flex:1 }}>
-            {NAV_ITEMS.map(item => {
-              const active = pathname.startsWith(item.href);
-              return (
-                <Link key={item.href} href={item.href}
-                  style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 10px", marginBottom:2, borderRadius:7, background: active?"#c0392b":"transparent", color: active?"#fff":"#9ca3af", textDecoration:"none", fontWeight: active?700:400, fontSize:13, whiteSpace:"nowrap", overflow:"hidden", transition:"all 0.1s" }}
-                  onMouseEnter={e => { if(!active)(e.currentTarget as HTMLElement).style.background="#2a2d3a"; }}
-                  onMouseLeave={e => { if(!active)(e.currentTarget as HTMLElement).style.background="transparent"; }}
-                >
-                  <span style={{ fontSize:16, flexShrink:0 }}>{item.icon}</span>
-                  {sidebarOpen && <span style={{ overflow:"hidden", textOverflow:"ellipsis" }}>{item.label}</span>}
-                </Link>
-              );
-            })}
+          {/* Navigation */}
+          <nav style={{ padding: "10px 8px", flex: 1, overflowY: "auto" }}>
+
+            <SectionLabel label="Module" />
+            {NAV_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
+
+            <Divider />
+            <SectionLabel label="Kontakte" />
+            {KONTAKT_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
 
             {isAdmin && (
               <>
-                {sidebarOpen && <div style={{ fontSize:10, color:"#444", textTransform:"uppercase", letterSpacing:"0.5px", padding:"12px 10px 4px" }}>Administration</div>}
-                {ADMIN_NAV.map(item => {
-                  const active = pathname.startsWith(item.href);
-                  return (
-                    <Link key={item.href} href={item.href}
-                      style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 10px", marginBottom:2, borderRadius:7, background: active?"#c0392b":"transparent", color: active?"#fff":"#9ca3af", textDecoration:"none", fontWeight: active?700:400, fontSize:13, whiteSpace:"nowrap", overflow:"hidden" }}
-                      onMouseEnter={e => { if(!active)(e.currentTarget as HTMLElement).style.background="#2a2d3a"; }}
-                      onMouseLeave={e => { if(!active)(e.currentTarget as HTMLElement).style.background="transparent"; }}
-                    >
-                      <span style={{ fontSize:16, flexShrink:0 }}>{item.icon}</span>
-                      {sidebarOpen && <span>{item.label}</span>}
-                    </Link>
-                  );
-                })}
+                <Divider />
+                <SectionLabel label="Administration" />
+                {ADMIN_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
               </>
             )}
           </nav>
 
-          {/* User info */}
-          {sidebarOpen && (
-            <div style={{ padding:"12px 14px", borderTop:"1px solid #2a2d3a" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ width:32, height:32, borderRadius:"50%", background:(ROLLE_COLOR[rolle]||"#666")+"33", border:`1.5px solid ${ROLLE_COLOR[rolle]||"#666"}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:800, color:ROLLE_COLOR[rolle]||"#666", flexShrink:0 }}>
+          {/* User-Bereich */}
+          {open && (
+            <div style={{ padding: "12px 14px", borderTop: `1px solid ${RN.navyLight}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: "50%",
+                  background: RN.gold + "22", border: `2px solid ${RN.gold}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 12, fontWeight: 800, color: RN.gold, flexShrink: 0,
+                }}>
                   {initials}
                 </div>
-                <div style={{ overflow:"hidden" }}>
-                  <div style={{ fontSize:12, fontWeight:700, color:"#ddd", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{user?.name}</div>
-                  <div style={{ fontSize:10, color:ROLLE_COLOR[rolle]||"#666" }}>{ROLLE_LABEL[rolle]||rolle}</div>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>{user?.name}</div>
+                  <div style={{ fontSize: 10, color: ROLLE_COLOR[rolle] || RN.gold }}>{ROLLE_LABEL[rolle] || rolle}</div>
                 </div>
+              </div>
+              <div style={{ marginTop: 10, padding: "5px 8px", background: RN.navyLight, borderRadius: 6, textAlign: "center" }}>
+                <div style={{ fontSize: 9, color: "#475569" }}>Powered by</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: RN.gold, letterSpacing: "1px" }}>SPIDERFROG AG</div>
               </div>
             </div>
           )}
         </aside>
 
         {/* ── Main Content ─────────────────────────────────────────────────── */}
-        <main style={{ flex:1, overflow:"auto", background:"#f5f5f5" }}>
+        <main style={{ flex: 1, overflow: "auto", background: RN.bg }}>
           {children}
         </main>
       </div>
