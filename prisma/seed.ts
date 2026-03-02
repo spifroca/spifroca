@@ -1,113 +1,365 @@
-import { PrismaClient, Rolle, ProjektStatus, AusschreibungStatus, MeilensteinStatus, RisikoWahrscheinlichkeit, RisikoAuswirkung, BelegArt } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
+const pw = (p: string) => bcrypt.hashSync(p, 10);
 
 async function main() {
   console.log("🌱 Starte Seed...");
 
-  // ─── Benutzer ──────────────────────────────────────────────────────────────
-  const pw = (p: string) => bcrypt.hashSync(p, 10);
+  // ─── Personen (Kontakte) ────────────────────────────────────────────────────
+
+  // Firmen
+  const firmaSpiderfrog = await prisma.person.upsert({
+    where: { id: "firm-spiderfrog" },
+    update: {},
+    create: {
+      id: "firm-spiderfrog",
+      typ: "FIRMA", rollen: ["PLANER"],
+      name: "Spiderfrog AG", firmaName: "Spiderfrog AG",
+      strasse: "Industriestrasse 12", plz: "5242", ort: "Lupfig", land: "CH",
+      email: "info@spiderfrog.ch", telefon: "+41 56 123 45 67",
+      webseite: "https://spiderfrog.ch", uid: "CHE-123.456.789",
+    },
+  });
+
+  const firmaRealNorth = await prisma.person.upsert({
+    where: { id: "firm-realnorth" },
+    update: {},
+    create: {
+      id: "firm-realnorth",
+      typ: "FIRMA", rollen: ["BAUHERR"],
+      name: "Real North AG", firmaName: "Real North AG",
+      strasse: "Unternehmer-Park 3", plz: "6340", ort: "Baar", land: "CH",
+      email: "verwaltung@realnorth.ch", telefon: "+41 41 552 53 63",
+      webseite: "https://realnorth.ch", uid: "CHE-987.654.321",
+    },
+  });
+
+  const firmaBauAG = await prisma.person.upsert({
+    where: { id: "firm-bauag" },
+    update: {},
+    create: {
+      id: "firm-bauag",
+      typ: "FIRMA", rollen: ["LIEFERANT", "UNTERNEHMER"],
+      name: "Müller Bau AG", firmaName: "Müller Bau AG",
+      strasse: "Werkstrasse 8", plz: "5400", ort: "Baden", land: "CH",
+      email: "info@mueller-bau.ch", telefon: "+41 56 222 33 44",
+      uid: "CHE-456.789.123", iban: "CH93 0076 2011 6238 5295 7",
+    },
+  });
+
+  const firmaElektro = await prisma.person.upsert({
+    where: { id: "firm-elektro" },
+    update: {},
+    create: {
+      id: "firm-elektro",
+      typ: "FIRMA", rollen: ["LIEFERANT"],
+      name: "Elektro Huber AG", firmaName: "Elektro Huber AG",
+      strasse: "Stromgasse 5", plz: "5600", ort: "Lenzburg", land: "CH",
+      email: "info@elektro-huber.ch", telefon: "+41 62 333 44 55",
+      iban: "CH56 0483 5012 3456 7800 9",
+    },
+  });
+
+  // Privatpersonen
+  const personSandra = await prisma.person.upsert({
+    where: { id: "pers-sandra" },
+    update: {},
+    create: {
+      id: "pers-sandra",
+      typ: "PRIVATPERSON", rollen: ["BENUTZER", "PLANER"],
+      name: "Meier", vorname: "Sandra",
+      email: "sandra.meier@spiderfrog.ch",
+      telefon: "+41 79 123 45 67",
+      funktion: "Projektleiterin",
+      arbeitgeberId: firmaSpiderfrog.id,
+      strasse: "Hauptstrasse 22", plz: "5242", ort: "Lupfig", land: "CH",
+      sprache: "DE",
+    },
+  });
+
+  const personAdmin = await prisma.person.upsert({
+    where: { id: "pers-admin" },
+    update: {},
+    create: {
+      id: "pers-admin",
+      typ: "PRIVATPERSON", rollen: ["BENUTZER"],
+      name: "Administrator", vorname: "System",
+      email: "admin@spiderfrog.ch",
+      funktion: "System Administrator",
+      arbeitgeberId: firmaSpiderfrog.id,
+      sprache: "DE",
+    },
+  });
+
+  const personThomas = await prisma.person.upsert({
+    where: { id: "pers-thomas" },
+    update: {},
+    create: {
+      id: "pers-thomas",
+      typ: "PRIVATPERSON", rollen: ["BENUTZER", "PLANER"],
+      name: "Brun", vorname: "Thomas",
+      email: "thomas.brun@spiderfrog.ch",
+      telefon: "+41 79 234 56 78",
+      funktion: "Architekt",
+      arbeitgeberId: firmaSpiderfrog.id,
+      sprache: "DE",
+    },
+  });
+
+  const personKlaus = await prisma.person.upsert({
+    where: { id: "pers-klaus" },
+    update: {},
+    create: {
+      id: "pers-klaus",
+      typ: "PRIVATPERSON", rollen: ["BAUHERR"],
+      name: "Schneider", vorname: "Klaus",
+      email: "k.schneider@realnorth.ch",
+      telefon: "+41 41 552 53 60",
+      funktion: "Geschäftsführer",
+      arbeitgeberId: firmaRealNorth.id,
+      sprache: "DE",
+    },
+  });
+
+  const personMaria = await prisma.person.upsert({
+    where: { id: "pers-maria" },
+    update: {},
+    create: {
+      id: "pers-maria",
+      typ: "PRIVATPERSON", rollen: ["KONTAKT"],
+      name: "Vogel", vorname: "Maria",
+      email: "m.vogel@mueller-bau.ch",
+      telefon: "+41 56 222 33 45",
+      funktion: "Projektleiterin Bau",
+      arbeitgeberId: firmaBauAG.id,
+      sprache: "DE",
+    },
+  });
+
+  const personReto = await prisma.person.upsert({
+    where: { id: "pers-reto" },
+    update: {},
+    create: {
+      id: "pers-reto",
+      typ: "PRIVATPERSON", rollen: ["BENUTZER"],
+      name: "Keller", vorname: "Reto",
+      email: "controlling@spiderfrog.ch",
+      telefon: "+41 79 345 67 89",
+      funktion: "Controller",
+      arbeitgeberId: firmaSpiderfrog.id,
+      sprache: "DE",
+    },
+  });
+
+  // ─── Benutzer ───────────────────────────────────────────────────────────────
 
   const admin = await prisma.benutzer.upsert({
     where: { email: "admin@spiderfrog.ch" },
     update: {},
-    create: { email: "admin@spiderfrog.ch", passwordHash: pw("Admin123!"), name: "Sandra Meier", rolle: Rolle.ADMINISTRATOR, mandant: "Spiderfrog AG", mfaAktiv: false },
-  });
-  const leiter = await prisma.benutzer.upsert({
-    where: { email: "leiter@spiderfrog.ch" },
-    update: {},
-    create: { email: "leiter@spiderfrog.ch", passwordHash: pw("Leiter123!"), name: "Marco Weber", rolle: Rolle.PROJEKTLEITER, mandant: "Spiderfrog AG" },
-  });
-  await prisma.benutzer.upsert({
-    where: { email: "controlling@spiderfrog.ch" },
-    update: {},
-    create: { email: "controlling@spiderfrog.ch", passwordHash: pw("Control123!"), name: "Beat Zimmermann", rolle: Rolle.CONTROLLING, mandant: "Spiderfrog AG", mfaAktiv: true },
-  });
-  await prisma.benutzer.upsert({
-    where: { email: "planer@extern.ch" },
-    update: {},
-    create: { email: "planer@extern.ch", passwordHash: pw("Planer123!"), name: "Maria Keller", rolle: Rolle.EXTERNER_PLANER, mandant: "Keller Architektur" },
-  });
-
-  // ─── Projekte ──────────────────────────────────────────────────────────────
-  const projekte = [
-    { nummer: "16299.00", name: "Striegelpark Safenwil, Mehrfamilienhäuser", status: ProjektStatus.IN_AUSFUEHRUNG, gruppe: "Bern", budgetTotal: 4200000, budgetVerbraucht: 3150000, projektleiterId: leiter.id },
-    { nummer: "16401",    name: "Zentrum Rietacker, Gewerbe-/Wohnüberbauung", status: ProjektStatus.IN_AUSFUEHRUNG, gruppe: "Zürich", budgetTotal: 2600000, budgetVerbraucht: 890000, projektleiterId: leiter.id },
-    { nummer: "16355",    name: "Am Klostergarten, Neubau Gewerbezentrum", status: ProjektStatus.OFFERTE, gruppe: "Luzern", budgetTotal: 1800000, budgetVerbraucht: 320000 },
-    { nummer: "16258",    name: "Umbau Sporthalle 'Hock', Basel", status: ProjektStatus.IN_AUSFUEHRUNG, gruppe: "Basel", budgetTotal: 3100000, budgetVerbraucht: 2900000 },
-    { nummer: "16666",    name: "Hotel Concordia, Erweiterung Apparthotel", status: ProjektStatus.IN_VORBEREITUNG, gruppe: "Basel", budgetTotal: 6100000, budgetVerbraucht: 5950000 },
-    { nummer: "16096",    name: "Schulhaus Zelgwiesen, Erweiterung Doppelturnhallen", status: ProjektStatus.IN_VORBEREITUNG, gruppe: "Luzern", budgetTotal: 5200000, budgetVerbraucht: 400000 },
-    { nummer: "20001.MH", name: "Demo Musterprojekt", status: ProjektStatus.AKQUISITION, gruppe: "Zürich", budgetTotal: 800000, budgetVerbraucht: 0 },
-  ];
-
-  for (const p of projekte) {
-    const proj = await prisma.projekt.upsert({ where: { nummer: p.nummer }, update: {}, create: p });
-
-    // Kostenstellen
-    await prisma.kostenstelle.createMany({ data: [
-      { projektId: proj.id, bkp: "211", bezeichnung: "Baumeisterarbeiten", budget: p.budgetTotal! * 0.3, verbraucht: (p.budgetVerbraucht||0) * 0.3 },
-      { projektId: proj.id, bkp: "221", bezeichnung: "Zimmerarbeiten", budget: p.budgetTotal! * 0.1, verbraucht: (p.budgetVerbraucht||0) * 0.1 },
-      { projektId: proj.id, bkp: "231", bezeichnung: "Fassade", budget: p.budgetTotal! * 0.15, verbraucht: (p.budgetVerbraucht||0) * 0.12 },
-      { projektId: proj.id, bkp: "241", bezeichnung: "Fenster / Aussentüren", budget: p.budgetTotal! * 0.08, verbraucht: (p.budgetVerbraucht||0) * 0.08 },
-    ], skipDuplicates: true });
-
-    // Meilensteine
-    await prisma.meilenstein.createMany({ data: [
-      { projektId: proj.id, bezeichnung: "Baugenehmigung erteilt", datum: new Date("2024-03-15"), status: MeilensteinStatus.ERLEDIGT },
-      { projektId: proj.id, bezeichnung: "Rohbau Abnahme", datum: new Date("2025-05-30"), status: proj.status === ProjektStatus.IN_AUSFUEHRUNG ? MeilensteinStatus.IN_ARBEIT : MeilensteinStatus.OFFEN },
-      { projektId: proj.id, bezeichnung: "Bauübergabe", datum: new Date("2025-11-30"), status: MeilensteinStatus.OFFEN },
-    ], skipDuplicates: false });
-
-    // Risiken
-    await prisma.risiko.createMany({ data: [
-      { projektId: proj.id, titel: "Lieferverzug Material", kategorie: "Lieferkette", wahrscheinlichkeit: RisikoWahrscheinlichkeit.MITTEL, auswirkung: RisikoAuswirkung.ERHEBLICH, massnahme: "Alternativlieferanten evaluieren" },
-      { projektId: proj.id, titel: "Kostenüberschreitung", kategorie: "Finanziell", wahrscheinlichkeit: RisikoWahrscheinlichkeit.NIEDRIG, auswirkung: RisikoAuswirkung.GERING, massnahme: "Monatliches Controlling" },
-    ], skipDuplicates: false });
-
-    // Kommunikation
-    await prisma.kommunikationsInfo.createMany({ data: [
-      { projektId: proj.id, funktion: "Projektleitung", nummer: 18, name: "Marco Weber", abteilung: "Marketing / Finanzen (GL)", strasse: "Wülflingerstrasse 12", ort: "8400 Winterthur ZH", typ: "team", kontakte: JSON.stringify([{art:"Intern",wert:"+41 (52) 2690180"},{art:"Fax",wert:"+41 (52) 2690181"},{art:"E-Mail",wert:"weber@spiderfrog.ch"}]) },
-      { projektId: proj.id, funktion: "Bauleiter", nummer: 30, name: "Burri Chris", abteilung: "Software-Entwicklung", strasse: "Wülflingerstrasse 12", ort: "8400 Winterthur ZH", typ: "team", kontakte: JSON.stringify([{art:"Intern",wert:"+41 (52) 2690130"}]) },
-    ], skipDuplicates: false });
-  }
-
-  console.log("✅ Seed erfolgreich abgeschlossen!");
-  console.log("\n📋 Demo-Zugänge:");
-  console.log("  admin@spiderfrog.ch        / Admin123!   (Administrator)");
-  console.log("  leiter@spiderfrog.ch       / Leiter123!  (Projektleiter)");
-  console.log("  controlling@spiderfrog.ch  / Control123! (Controlling, 2FA)");
-  console.log("  planer@extern.ch       / Planer123!  (Externer Planer)");
-}
-
-main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
-
-// ─── Für alle Benutzer automatisch einen Kontakt erstellen ───────────────────
-console.log("👥 Erstelle Kontakte für bestehende Benutzer...");
-
-const alleBenutzer = await prisma.benutzer.findMany({ where: { personId: null } });
-
-for (const b of alleBenutzer) {
-  const nameParts = b.name.split(" ");
-  const vorname   = nameParts.length > 1 ? nameParts[0] : null;
-  const name      = nameParts.length > 1 ? nameParts.slice(1).join(" ") : b.name;
-
-  const person = await prisma.person.create({
-    data: {
-      typ:    "PRIVATPERSON",
-      rollen: ["BENUTZER"],
-      name,
-      vorname,
-      email: b.email,
+    create: {
+      email: "admin@spiderfrog.ch",
+      passwordHash: pw("Admin123!"),
+      name: "System Administrator",
+      rolle: "ADMINISTRATOR",
+      personId: personAdmin.id,
     },
   });
 
-  await prisma.benutzer.update({
-    where: { id: b.id },
-    data:  { personId: person.id },
+  const sandra = await prisma.benutzer.upsert({
+    where: { email: "sandra.meier@spiderfrog.ch" },
+    update: {},
+    create: {
+      email: "sandra.meier@spiderfrog.ch",
+      passwordHash: pw("Sandra123!"),
+      name: "Sandra Meier",
+      rolle: "PROJEKTLEITER",
+      personId: personSandra.id,
+    },
   });
 
-  console.log(`  ✅ Kontakt für ${b.name} erstellt`);
+  const thomas = await prisma.benutzer.upsert({
+    where: { email: "thomas.brun@spiderfrog.ch" },
+    update: {},
+    create: {
+      email: "thomas.brun@spiderfrog.ch",
+      passwordHash: pw("Thomas123!"),
+      name: "Thomas Brun",
+      rolle: "PROJEKTLEITER",
+      personId: personThomas.id,
+    },
+  });
+
+  const reto = await prisma.benutzer.upsert({
+    where: { email: "controlling@spiderfrog.ch" },
+    update: {},
+    create: {
+      email: "controlling@spiderfrog.ch",
+      passwordHash: pw("Control123!"),
+      name: "Reto Keller",
+      rolle: "CONTROLLING",
+      personId: personReto.id,
+    },
+  });
+
+  // ─── Projekte ───────────────────────────────────────────────────────────────
+
+  const projekte = [
+    {
+      id: "proj-001",
+      nummer: "2024-001",
+      name: "Wohnüberbauung Striegelpark Safenwil",
+      gruppe: "Wohnbau",
+      status: "IN_AUSFUEHRUNG",
+      projektleiterId: sandra.id,
+      budgetGesamt: 4800000,
+      budgetVerbraucht: 2100000,
+      fortschritt: 44,
+      beschreibung: "12 Eigentumswohnungen, 3-5 Zimmer, Minergie-Standard",
+    },
+    {
+      id: "proj-002",
+      nummer: "2024-002",
+      name: "Zentrum Rietacker Küttigen",
+      gruppe: "Gewerbe",
+      status: "PLANUNG",
+      projektleiterId: thomas.id,
+      budgetGesamt: 12500000,
+      budgetVerbraucht: 450000,
+      fortschritt: 12,
+      beschreibung: "Neubau Gewerbezentrum mit Büro- und Ladenflächen",
+    },
+    {
+      id: "proj-003",
+      nummer: "2024-003",
+      name: "Sanierung Schulhaus Brugg",
+      gruppe: "Öffentlich",
+      status: "IN_AUSFUEHRUNG",
+      projektleiterId: sandra.id,
+      budgetGesamt: 3200000,
+      budgetVerbraucht: 2800000,
+      fortschritt: 87,
+      beschreibung: "Energetische Sanierung, neue Fenster, Dach und HLKSE",
+    },
+    {
+      id: "proj-004",
+      nummer: "2023-008",
+      name: "Logieren am Rennweg Zürich",
+      gruppe: "Wohnbau",
+      status: "ABGESCHLOSSEN",
+      projektleiterId: thomas.id,
+      budgetGesamt: 2100000,
+      budgetVerbraucht: 2050000,
+      fortschritt: 100,
+      beschreibung: "4 voll möblierte Appartements in der Zürcher Altstadt",
+    },
+    {
+      id: "proj-005",
+      nummer: "2025-001",
+      name: "Im Birkenhain Rudolfstetten",
+      gruppe: "Wohnbau",
+      status: "VORPROJEKT",
+      projektleiterId: sandra.id,
+      budgetGesamt: 18000000,
+      budgetVerbraucht: 120000,
+      fortschritt: 5,
+      beschreibung: "Neues Wohnquartier am Islerenwald, ca. 60 Wohneinheiten",
+    },
+    {
+      id: "proj-006",
+      nummer: "2024-004",
+      name: "Umbau Bürogebäude Baden",
+      gruppe: "Gewerbe",
+      status: "PLANUNG",
+      projektleiterId: thomas.id,
+      budgetGesamt: 850000,
+      budgetVerbraucht: 95000,
+      fortschritt: 18,
+      beschreibung: "Neugestaltung Bürolandschaft, Open Space Konzept",
+    },
+  ];
+
+  for (const p of projekte) {
+    await prisma.projekt.upsert({
+      where: { id: p.id },
+      update: {},
+      create: {
+        id: p.id,
+        nummer: p.nummer,
+        name: p.name,
+        gruppe: p.gruppe,
+        status: p.status as any,
+        projektleiterId: p.projektleiterId,
+        budgetGesamt: p.budgetGesamt,
+        budgetVerbraucht: p.budgetVerbraucht,
+        fortschritt: p.fortschritt,
+        beschreibung: p.beschreibung,
+      },
+    });
+    console.log(`  ✅ Projekt: ${p.nummer} ${p.name}`);
+  }
+
+  // ─── Projekt-Personen Verknüpfungen ─────────────────────────────────────────
+
+  const verknuepfungen = [
+    { projektId: "proj-001", personId: personSandra.id,  funktion: "Projektleiterin" },
+    { projektId: "proj-001", personId: personKlaus.id,   funktion: "Bauherr" },
+    { projektId: "proj-001", personId: firmaBauAG.id,    funktion: "Generalunternehmer" },
+    { projektId: "proj-002", personId: personThomas.id,  funktion: "Architekt" },
+    { projektId: "proj-002", personId: firmaRealNorth.id,funktion: "Bauherr" },
+    { projektId: "proj-003", personId: personSandra.id,  funktion: "Projektleiterin" },
+    { projektId: "proj-003", personId: firmaBauAG.id,    funktion: "Totalunternehmer" },
+    { projektId: "proj-003", personId: firmaElektro.id,  funktion: "Elektroplaner" },
+    { projektId: "proj-005", personId: personSandra.id,  funktion: "Projektleiterin" },
+    { projektId: "proj-005", personId: firmaRealNorth.id,funktion: "Bauherr" },
+  ];
+
+  for (const v of verknuepfungen) {
+    await prisma.projektPerson.upsert({
+      where: { projektId_personId: { projektId: v.projektId, personId: v.personId } },
+      update: {},
+      create: v,
+    });
+  }
+
+  // ─── Risiken ─────────────────────────────────────────────────────────────────
+
+  await prisma.risiko.createMany({
+    skipDuplicates: true,
+    data: [
+      { projektId: "proj-001", titel: "Lieferverzug Fenster", wahrscheinlichkeit: "HOCH", auswirkung: "MITTEL", massnahme: "Frühzeitig bestellen, Alternativlieferant evaluieren", status: "OFFEN" },
+      { projektId: "proj-001", titel: "Bodenkontamination", wahrscheinlichkeit: "NIEDRIG", auswirkung: "HOCH", massnahme: "Bodenuntersuchung abgeschlossen, keine Kontamination", status: "GESCHLOSSEN" },
+      { projektId: "proj-003", titel: "Asbest in Altbauschichten", wahrscheinlichkeit: "MITTEL", auswirkung: "HOCH", massnahme: "Schadstoffgutachter beauftragt, Sanierungskonzept in Erarbeitung", status: "IN_BEARBEITUNG" },
+      { projektId: "proj-005", titel: "Baubewilligung verzögert", wahrscheinlichkeit: "MITTEL", auswirkung: "HOCH", massnahme: "Frühzeitiger Dialog mit Gemeinde Rudolfstetten", status: "IN_BEARBEITUNG" },
+    ],
+  });
+
+  // ─── Meilensteine ────────────────────────────────────────────────────────────
+
+  await prisma.meilenstein.createMany({
+    skipDuplicates: true,
+    data: [
+      { projektId: "proj-001", titel: "Baubewilligung erteilt",     datum: new Date("2024-03-15"), status: "ERLEDIGT" },
+      { projektId: "proj-001", titel: "Rohbau abgeschlossen",       datum: new Date("2024-09-30"), status: "ERLEDIGT" },
+      { projektId: "proj-001", titel: "Innenausbau fertig",         datum: new Date("2025-04-30"), status: "IN_ARBEIT" },
+      { projektId: "proj-001", titel: "Übergabe an Käufer",         datum: new Date("2025-07-01"), status: "OFFEN" },
+      { projektId: "proj-003", titel: "Gerüst gestellt",            datum: new Date("2024-05-01"), status: "ERLEDIGT" },
+      { projektId: "proj-003", titel: "Fenster eingebaut",          datum: new Date("2024-10-15"), status: "ERLEDIGT" },
+      { projektId: "proj-003", titel: "Abnahme Gemeinde",           datum: new Date("2025-03-15"), status: "IN_VERZUG" },
+      { projektId: "proj-005", titel: "Vorprojekt genehmigt",       datum: new Date("2025-06-01"), status: "OFFEN" },
+      { projektId: "proj-005", titel: "Baubewilligung eingereicht", datum: new Date("2025-09-01"), status: "OFFEN" },
+    ],
+  });
+
+  console.log("\n✅ Seed erfolgreich abgeschlossen!");
+  console.log("\n📋 Benutzer-Zugänge:");
+  console.log("  admin@spiderfrog.ch       | Admin123!  | Administrator");
+  console.log("  sandra.meier@spiderfrog.ch| Sandra123! | Projektleiterin");
+  console.log("  thomas.brun@spiderfrog.ch | Thomas123! | Projektleiter");
+  console.log("  controlling@spiderfrog.ch | Control123!| Controlling");
 }
 
-console.log("✅ Seed abgeschlossen!");
+main()
+  .catch(e => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
