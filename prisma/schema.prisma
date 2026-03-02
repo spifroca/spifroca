@@ -99,6 +99,7 @@ model Projekt {
   risiken       Risiko[]
   kommunikation KommunikationsInfo[]
   belege        Beleg[]
+  personen      ProjektPerson[]
 
   @@map("projekte")
 }
@@ -279,4 +280,98 @@ model Beleg {
   updatedAt   DateTime  @updatedAt
 
   @@map("belege")
+}
+
+// ─── Personenverwaltung ───────────────────────────────────────────────────────
+
+enum PersonTyp {
+  PRIVATPERSON
+  FIRMA
+}
+
+enum PersonRolle {
+  BENUTZER
+  LIEFERANT
+  BAUHERR
+  PLANER
+  UNTERNEHMER
+  KONTAKT
+}
+
+enum Sprache {
+  DE
+  FR
+  IT
+  EN
+}
+
+model Person {
+  id                String      @id @default(cuid())
+  typ               PersonTyp   @default(PRIVATPERSON)
+  rollen            PersonRolle[]
+
+  // Persönliche Daten
+  name              String
+  vorname           String?
+  geburtsdatum      DateTime?
+  geschlecht        String?     // M / F / divers
+
+  // Kontakt
+  email             String?
+  telefon           String?
+  telefonMobil      String?
+  webseite          String?
+  sprache           Sprache     @default(DE)
+
+  // Privatadresse
+  strasse           String?
+  plz               String?
+  ort               String?
+  land              String?     @default("CH")
+
+  // Geschäftlich
+  funktion          String?
+  abteilung         String?
+  geschaeftsStrasse String?
+  geschaeftsPlz     String?
+  geschaeftsOrt     String?
+
+  // Firma-spezifisch
+  firmaName         String?     // Falls typ = FIRMA
+  uid               String?     // UID / MwSt-Nummer
+  iban              String?     // Bankverbindung
+
+  // Anstellung bei Firma
+  arbeitgeber       Person?     @relation("Mitarbeiter", fields: [arbeitgeberId], references: [id])
+  arbeitgeberId     String?
+  mitarbeiter       Person[]    @relation("Mitarbeiter")
+
+  // Notizen
+  notizen           String?
+
+  // Status
+  aktiv             Boolean     @default(true)
+
+  // Systemfelder
+  mandant           String      @default("Spiderfrog AG")
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Verknüpfungen
+  projekte          ProjektPerson[]
+
+  @@map("personen")
+}
+
+model ProjektPerson {
+  id        String   @id @default(cuid())
+  projekt   Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  personId  String
+  funktion  String?  // Rolle in diesem Projekt
+  createdAt DateTime @default(now())
+
+  @@unique([projektId, personId])
+  @@map("projekt_personen")
 }

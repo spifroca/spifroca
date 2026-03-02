@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/ausschreibung",     label: "Ausschreibung",      icon: "📋" },
   { href: "/dashboard/termine",           label: "Termine",            icon: "📅" },
   { href: "/dashboard/risiken",           label: "Risiken & Chancen",  icon: "⚡" },
+  { href: "/dashboard/personen",          label: "Personen",           icon: "👥" },
 ];
 
 const ADMIN_NAV = [
