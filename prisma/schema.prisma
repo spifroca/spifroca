@@ -32,6 +32,10 @@ model Benutzer {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  // Verknüpfung zu Kontakt
+  person         Person?          @relation(fields: [personId], references: [id])
+  personId       String?          @unique
+
   // Beziehungen
   projekte       Projekt[]        @relation("Projektleiter")
   auditLogs      AuditLog[]
@@ -345,6 +349,9 @@ model Person {
   arbeitgeber       Person?     @relation("Mitarbeiter", fields: [arbeitgeberId], references: [id])
   arbeitgeberId     String?
   mitarbeiter       Person[]    @relation("Mitarbeiter")
+
+  // Verknüpfter Benutzer
+  benutzer          Benutzer?
 
   // Notizen
   notizen           String?

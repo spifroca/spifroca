@@ -23,34 +23,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: GitHub Container Registry anmelden
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Image-Tags generieren
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=sha-
-
-      - name: Docker Buildx einrichten
-        uses: docker/setup-buildx-action@v3
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Image bauen und pushen
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile.synology
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker build -f Dockerfile.synology -t ghcr.io/${{ env.IMAGE_NAME }}:latest -t ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} .
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
 
   deploy:
     name: Deploy auf Synology NAS

@@ -81,3 +81,33 @@ async function main() {
 }
 
 main().catch(e => { console.error(e); process.exit(1); }).finally(() => prisma.$disconnect());
+
+// ─── Für alle Benutzer automatisch einen Kontakt erstellen ───────────────────
+console.log("👥 Erstelle Kontakte für bestehende Benutzer...");
+
+const alleBenutzer = await prisma.benutzer.findMany({ where: { personId: null } });
+
+for (const b of alleBenutzer) {
+  const nameParts = b.name.split(" ");
+  const vorname   = nameParts.length > 1 ? nameParts[0] : null;
+  const name      = nameParts.length > 1 ? nameParts.slice(1).join(" ") : b.name;
+
+  const person = await prisma.person.create({
+    data: {
+      typ:    "PRIVATPERSON",
+      rollen: ["BENUTZER"],
+      name,
+      vorname,
+      email: b.email,
+    },
+  });
+
+  await prisma.benutzer.update({
+    where: { id: b.id },
+    data:  { personId: person.id },
+  });
+
+  console.log(`  ✅ Kontakt für ${b.name} erstellt`);
+}
+
+console.log("✅ Seed abgeschlossen!");
