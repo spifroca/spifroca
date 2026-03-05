@@ -34,3 +34,13 @@ html, body {
 /* Table base */
 table { border-collapse: collapse; width: 100%; }
 th, td { text-align: left; }
+
+/* Zahlen-Pfeile in Input-Feldern entfernen */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
