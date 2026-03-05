@@ -51,13 +51,17 @@ jobs:
           username: ${{ secrets.NAS_USER }}
           password: ${{ secrets.NAS_PASSWORD }}
           port: ${{ secrets.NAS_SSH_PORT }}
+          command_timeout: 30m
           script: |
             export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+            echo "Pull Image..."
             sudo docker pull ghcr.io/spifroca/spifroca-app:latest
+            echo "Container neu starten..."
             cd /volume1/docker/spifroca
             sudo docker compose -f compose-live.yml down || true
             sudo docker compose -f compose-live.yml up -d
-            sleep 20
+            echo "Warte auf Start..."
+            sleep 30
             sudo docker exec spifroca_app npx prisma migrate deploy || true
             sudo docker ps | grep spifroca
             echo "Deployment erfolgreich!"
