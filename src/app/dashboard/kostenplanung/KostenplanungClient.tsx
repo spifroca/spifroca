@@ -53,7 +53,7 @@ function calc(d: any) {
 }
 
 // ── NumInput: lokaler State + Tab-Navigation ─────────────────────────────────
-function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string) => void; unit?: string }) {
+function NumInput({ value, onChange, unit, tabIndex }: { value: any; onChange: (v: string) => void; unit?: string; tabIndex?: number }) {
   const [local, setLocal] = React.useState(value ?? "");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -73,6 +73,7 @@ function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string)
         onChange={e => setLocal(e.target.value)}
         onBlur={e => onChange(e.target.value)}
         placeholder="0"
+        tabIndex={tabIndex}
         style={{ width: 110, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
         onBlurCapture={e => (e.target as HTMLInputElement).style.border = "1px solid #bbb"}
@@ -375,35 +376,35 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="00" label="Grundstück" result={r.pos00} />
               <Row pos="" label="Grundstücksfläche" indent result={r.grundstueck}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <NumInput value={data["grundstueckM2"]} onChange={v => set("grundstueckM2", v)} unit="m²" />
+                  <NumInput value={data["grundstueckM2"]} onChange={v => set("grundstueckM2", v)} unit="m²" tabIndex={1} />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <NumInput value={data["grundstueckPreisM2"]} onChange={v => set("grundstueckPreisM2", v)} unit="CHF/m²" />
+                  <NumInput value={data["grundstueckPreisM2"]} onChange={v => set("grundstueckPreisM2", v)} unit="CHF/m²" tabIndex={2} />
                 </div>
               </Row>
               <Row pos="" label="Nebenkosten Kauf" indent result={r.grundNebenk}>
-                <NumInput value={data["grundstueckNebenkosten"]} onChange={v => set("grundstueckNebenkosten", v)} unit="%" />
+                <NumInput value={data["grundstueckNebenkosten"]} onChange={v => set("grundstueckNebenkosten", v)} unit="%" tabIndex={3} />
               </Row>
 
               {/* 01 Vorbereitungsarbeiten */}
               <SubRow pos="01" label="Vorbereitungsarbeiten" result={r.pos01} />
               <Row pos="" label="Anteil von Pos. 00" indent result={r.pos01}>
-                <NumInput value={data["vorbereitungProzent"]} onChange={v => set("vorbereitungProzent", v)} unit="% von Pos. 00" />
+                <NumInput value={data["vorbereitungProzent"]} onChange={v => set("vorbereitungProzent", v)} unit="% von Pos. 00" tabIndex={4} />
               </Row>
 
               {/* 02 Gebäude */}
               <SubRow pos="02" label="Gebäude" result={r.pos02} />
               <Row pos="02.1" label="Untergrund / UG" indent result={r.untergrund}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <NumInput value={data["untergrundM3"]} onChange={v => set("untergrundM3", v)} unit="m³" />
+                  <NumInput value={data["untergrundM3"]} onChange={v => set("untergrundM3", v)} unit="m³" tabIndex={5} />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <NumInput value={data["untergrundPreisM3"]} onChange={v => set("untergrundPreisM3", v)} unit="CHF/m³" />
+                  <NumInput value={data["untergrundPreisM3"]} onChange={v => set("untergrundPreisM3", v)} unit="CHF/m³" tabIndex={6} />
                 </div>
               </Row>
               <Row pos="02.2" label="Hochbau / OG" indent result={r.hochbau}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <NumInput value={data["hochbauM3"]} onChange={v => set("hochbauM3", v)} unit="m³" />
+                  <NumInput value={data["hochbauM3"]} onChange={v => set("hochbauM3", v)} unit="m³" tabIndex={7} />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <NumInput value={data["hochbauPreisM3"]} onChange={v => set("hochbauPreisM3", v)} unit="CHF/m³" />
+                  <NumInput value={data["hochbauPreisM3"]} onChange={v => set("hochbauPreisM3", v)} unit="CHF/m³" tabIndex={8} />
                 </div>
               </Row>
 
@@ -411,9 +412,9 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="03" label="Innenausbau" result={r.pos03} />
               <Row pos="" label="Innenausbaufläche" indent result={r.pos03}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <NumInput value={data["innenausbauM2"]} onChange={v => set("innenausbauM2", v)} unit="m²" />
+                  <NumInput value={data["innenausbauM2"]} onChange={v => set("innenausbauM2", v)} unit="m²" tabIndex={9} />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <NumInput value={data["innenausbauPreisM2"]} onChange={v => set("innenausbauPreisM2", v)} unit="CHF/m²" />
+                  <NumInput value={data["innenausbauPreisM2"]} onChange={v => set("innenausbauPreisM2", v)} unit="CHF/m²" tabIndex={10} />
                 </div>
               </Row>
 
@@ -421,9 +422,9 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="04" label="Umgebung" result={r.pos04} />
               <Row pos="" label="Umgebungsfläche" indent result={r.pos04}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <NumInput value={data["umgebungM2"]} onChange={v => set("umgebungM2", v)} unit="m²" />
+                  <NumInput value={data["umgebungM2"]} onChange={v => set("umgebungM2", v)} unit="m²" tabIndex={11} />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <NumInput value={data["umgebungPreisM2"]} onChange={v => set("umgebungPreisM2", v)} unit="CHF/m²" />
+                  <NumInput value={data["umgebungPreisM2"]} onChange={v => set("umgebungPreisM2", v)} unit="CHF/m²" tabIndex={12} />
                 </div>
               </Row>
 
@@ -433,7 +434,7 @@ export function KostenplanungClient({ projekte }: Props) {
               {/* 05 Baunebenkosten */}
               <SubRow pos="05" label="Baunebenkosten" result={r.pos05} />
               <Row pos="" label="Anteil von Summe 00–04" indent result={r.pos05}>
-                <NumInput value={data["baunebenkostenProzent"]} onChange={v => set("baunebenkostenProzent", v)} unit="% von 00–04" />
+                <NumInput value={data["baunebenkostenProzent"]} onChange={v => set("baunebenkostenProzent", v)} unit="% von 00–04" tabIndex={13} />
               </Row>
 
               {/* Total exkl. MwSt */}
@@ -473,11 +474,11 @@ export function KostenplanungClient({ projekte }: Props) {
           <div style={{ padding: "10px" }}>
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 11, color: "#666", marginBottom: 3 }}>Bruttogeschossfläche BGF</div>
-              <NumInput value={data["bgfM2"]} onChange={v => set("bgfM2", v)} unit="m²" />
+              <NumInput value={data["bgfM2"]} onChange={v => set("bgfM2", v)} unit="m²" tabIndex={14} />
             </div>
             <div>
               <div style={{ fontSize: 11, color: "#666", marginBottom: 3 }}>Bruttorauminhalt BRI</div>
-              <NumInput value={data["bri"]} onChange={v => set("bri", v)} unit="m³" />
+              <NumInput value={data["bri"]} onChange={v => set("bri", v)} unit="m³" tabIndex={15} />
             </div>
           </div>
           {/* IFC-Import Knopf */}
