@@ -104,6 +104,7 @@ model Projekt {
   kommunikation KommunikationsInfo[]
   belege        Beleg[]
   personen      ProjektPerson[]
+  machbarkeit   Machbarkeit?
 
   @@map("projekte")
 }
@@ -381,4 +382,51 @@ model ProjektPerson {
 
   @@unique([projektId, personId])
   @@map("projekt_personen")
+}
+
+// ─── Kostenplanung: Machbarkeit ──────────────────────────────────────────────
+
+model Machbarkeit {
+  id          String   @id @default(cuid())
+  projekt     Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String   @unique
+
+  // 00 Grundstück
+  grundstueckM2          Float?
+  grundstueckPreisM2     Float?
+  grundstueckNebenkosten Float?   @default(0)  // Prozentsatz Notariat etc.
+
+  // 01 Vorbereitungsarbeiten
+  vorbereitungProzent    Float?   @default(0)
+
+  // 02 Gebäude
+  untergrundM3           Float?
+  untergrundPreisM3      Float?
+  hochbauM3              Float?
+  hochbauPreisM3         Float?
+
+  // 03 Innenausbau
+  innenausbauBetrag      Float?   @default(0)
+
+  // 04 Umgebung
+  umgebungM2             Float?
+  umgebungPreisM2        Float?
+
+  // 05 Baunebenkosten
+  baunebenkostenProzent  Float?   @default(0)
+
+  // Kennzahlen
+  bgfM2                  Float?   // Bruttogeschossfläche
+  bri                    Float?   // Bruttorauminhalt m3
+
+  // MwSt
+  mwstSatz               Float?   @default(8.1)  // 8.1 / 3.8 / 0
+
+  // Meta
+  version                Int      @default(1)
+  notizen                String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("machbarkeit")
 }
