@@ -52,18 +52,22 @@ function calc(d: any) {
   return { grundstueck, grundNebenk, pos00, pos01, untergrund, hochbau, pos02, pos03, pos04, sum0004, pos05, total, mwstBetrag, totalMwst, chfM2, chfM3 };
 }
 
-// ── NumInput: lokaler State verhindert Re-Render-Fokus-Verlust ───────────────
+// ── NumInput: lokaler State + Tab-Navigation ─────────────────────────────────
 function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string) => void; unit?: string }) {
   const [local, setLocal] = React.useState(value ?? "");
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Externe Wertänderung (z.B. IFC-Import) übernehmen
+  // Externe Wertänderung (z.B. IFC-Import) nur übernehmen wenn nicht fokussiert
   React.useEffect(() => {
-    setLocal(value ?? "");
+    if (document.activeElement !== inputRef.current) {
+      setLocal(value ?? "");
+    }
   }, [value]);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
       <input
+        ref={inputRef}
         type="number"
         value={local}
         onChange={e => setLocal(e.target.value)}
@@ -71,6 +75,7 @@ function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string)
         placeholder="0"
         style={{ width: 110, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
+        onBlurCapture={e => (e.target as HTMLInputElement).style.border = "1px solid #bbb"}
       />
       {unit && <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{unit}</span>}
     </div>
