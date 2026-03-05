@@ -5,47 +5,38 @@ import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import Link from "next/link";
 
-// ─── Real North Farben ───────────────────────────────────────────────────────
-const RN = {
-  navy:      "#1C2B3A",
-  navyDark:  "#111d28",
-  navyLight: "#243447",
-  gold:      "#C8A96E",
-  goldDark:  "#b8935a",
-  bg:        "#F5F4F2",
-  white:     "#ffffff",
+// ─── Immopac-inspired Design ─────────────────────────────────────────────────
+const C = {
+  topbar:     "#1a1a1a",
+  sidebar:    "#2d2d2d",
+  sidebarHov: "#3a3a3a",
+  sidebarAct: "#444444",
+  accent:     "#0099cc",
+  accentHov:  "#007aaa",
+  bg:         "#f0f0f0",
+  white:      "#ffffff",
+  text:       "#333333",
+  textLight:  "#666666",
+  border:     "#cccccc",
 };
 
 const NAV_ITEMS = [
-  { href: "/dashboard/projekte",           label: "Projekte",           icon: "🏗️" },
+  { href: "/dashboard/projekte",           label: "Projekte",           icon: "🏗" },
   { href: "/dashboard/kostenplanung",      label: "Kostenplanung",      icon: "💰" },
   { href: "/dashboard/ausschreibung",      label: "Ausschreibung",      icon: "📋" },
   { href: "/dashboard/termine",            label: "Termine",            icon: "📅" },
   { href: "/dashboard/risiken",            label: "Risiken & Chancen",  icon: "⚡" },
 ];
-
 const KONTAKT_ITEMS = [
   { href: "/dashboard/personen",           label: "Kontakte",           icon: "👥" },
 ];
-
 const ADMIN_ITEMS = [
   { href: "/dashboard/benutzerverwaltung", label: "Benutzerverwaltung", icon: "🔐" },
 ];
 
-const ROLLE_COLOR: Record<string, string> = {
-  ADMINISTRATOR:   "#C8A96E",
-  PROJEKTLEITER:   "#3b82f6",
-  CONTROLLING:     "#8b5cf6",
-  EXTERNER_PLANER: "#f59e0b",
-  BETRACHTER:      "#6b7280",
-};
-
 const ROLLE_LABEL: Record<string, string> = {
-  ADMINISTRATOR:   "Administrator",
-  PROJEKTLEITER:   "Projektleiter",
-  CONTROLLING:     "Controlling",
-  EXTERNER_PLANER: "Externer Planer",
-  BETRACHTER:      "Betrachter",
+  ADMINISTRATOR: "Administrator", PROJEKTLEITER: "Projektleiter",
+  CONTROLLING: "Controlling", EXTERNER_PLANER: "Ext. Planer", BETRACHTER: "Betrachter",
 };
 
 interface Props { session: Session; children: React.ReactNode; }
@@ -57,67 +48,53 @@ export function DashboardClient({ session, children }: Props) {
   const isAdmin  = rolle === "ADMINISTRATOR";
   const [open, setOpen] = useState(true);
 
-  const initials = (user?.name || "??")
-    .split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+  const initials = (user?.name || "??").split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const NavLink = ({ href, label, icon }: { href: string; label: string; icon: string }) => {
     const active = pathname.startsWith(href);
     return (
       <Link href={href} style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: open ? "9px 12px" : "9px 0",
-        justifyContent: open ? "flex-start" : "center",
-        marginBottom: 2, borderRadius: 7,
-        background: active ? RN.gold : "transparent",
-        color: active ? RN.navy : "#94a3b8",
-        textDecoration: "none",
-        fontWeight: active ? 700 : 400,
-        fontSize: 13, whiteSpace: "nowrap",
-        borderLeft: active ? `3px solid ${RN.goldDark}` : "3px solid transparent",
-        transition: "all 0.15s",
+        display: "flex", alignItems: "center", gap: 8,
+        padding: open ? "8px 14px" : "8px 0", justifyContent: open ? "flex-start" : "center",
+        marginBottom: 1, color: active ? C.white : "#aaaaaa",
+        textDecoration: "none", fontWeight: active ? 600 : 400, fontSize: 12,
+        background: active ? C.accent : "transparent",
+        borderLeft: active ? "3px solid #66ccee" : "3px solid transparent",
+        transition: "all 0.1s",
       }}
-        onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = RN.navyLight; (e.currentTarget as HTMLElement).style.color = RN.white; }}}
-        onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#94a3b8"; }}}
+        onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = C.sidebarHov; (e.currentTarget as HTMLElement).style.color = C.white; }}}
+        onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#aaaaaa"; }}}
       >
-        <span style={{ fontSize: 16, flexShrink: 0, width: 20, textAlign: "center" }}>{icon}</span>
+        <span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{icon}</span>
         {open && <span>{label}</span>}
       </Link>
     );
   };
 
-  const SectionLabel = ({ label }: { label: string }) => open ? (
-    <div style={{ fontSize: 9, color: "#475569", textTransform: "uppercase", letterSpacing: "1px", padding: "4px 12px 6px", fontWeight: 700 }}>{label}</div>
-  ) : null;
-
-  const Divider = () => (
-    <div style={{ margin: "10px 0 8px", borderTop: `1px solid ${RN.navyLight}` }} />
+  const Sep = ({ label }: { label?: string }) => (
+    <div style={{ padding: open ? "10px 14px 4px" : "10px 0 4px", textAlign: open ? "left" : "center" }}>
+      {open && label && <span style={{ fontSize: 9, color: "#666", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 700 }}>{label}</span>}
+      {!label && <div style={{ borderTop: "1px solid #444", margin: "0 8px" }} />}
+    </div>
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", fontFamily: "Segoe UI, Helvetica Neue, Arial, sans-serif" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif", fontSize: 13 }}>
 
       {/* ── Topbar ─────────────────────────────────────────────────────────── */}
-      <header style={{
-        height: 48, background: RN.navyDark, color: RN.white,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", flexShrink: 0, zIndex: 50,
-        borderBottom: `2px solid ${RN.gold}`,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <img
-            src="https://spiderfrog.ch/wp-content/uploads/Subless_White.png"
-            alt="spifroca"
-            style={{ height: 24, objectFit: "contain" }}
-            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-          <div style={{ width: 1, height: 20, background: RN.gold + "55" }} />
-          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: "1px", color: RN.gold }}>spifroca</span>
-          <span style={{ opacity: 0.4, fontSize: 12 }}>Bauprojektmanagement</span>
+      <header style={{ height: 40, background: C.topbar, color: C.white, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 12px", flexShrink: 0, zIndex: 50 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="https://spiderfrog.ch/wp-content/uploads/Subless_White.png" alt="spifroca"
+            style={{ height: 20, objectFit: "contain" }}
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <span style={{ fontWeight: 700, fontSize: 13, color: C.accent, letterSpacing: "0.5px" }}>spifroca</span>
+          <span style={{ color: "#666", fontSize: 11 }}>Bauprojektmanagement</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ fontSize: 12, color: "#94a3b8" }}>👤 {user?.name}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 11, color: "#999" }}>{user?.email}</span>
+          <span style={{ fontSize: 11, background: "#333", padding: "2px 8px", borderRadius: 3, color: "#aaa" }}>{ROLLE_LABEL[rolle] || rolle}</span>
           <button onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            style={{ fontSize: 12, color: "#94a3b8", cursor: "pointer", background: "none", border: "1px solid #94a3b844", borderRadius: 5, padding: "3px 10px" }}>
+            style={{ fontSize: 11, color: "#aaa", cursor: "pointer", background: "none", border: "1px solid #555", borderRadius: 3, padding: "2px 8px" }}>
             Abmelden
           </button>
         </div>
@@ -126,67 +103,45 @@ export function DashboardClient({ session, children }: Props) {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
         {/* ── Sidebar ──────────────────────────────────────────────────────── */}
-        <aside style={{
-          width: open ? 220 : 52, background: RN.navy,
-          display: "flex", flexDirection: "column",
-          transition: "width 0.2s", flexShrink: 0,
-          borderRight: `1px solid ${RN.navyLight}`,
-        }}>
+        <aside style={{ width: open ? 200 : 44, background: C.sidebar, display: "flex", flexDirection: "column", transition: "width 0.15s", flexShrink: 0 }}>
 
-          {/* Toggle Button */}
-          <div style={{ padding: "10px 12px", display: "flex", justifyContent: open ? "flex-end" : "center", borderBottom: `1px solid ${RN.navyLight}` }}>
-            <button onClick={() => setOpen(!open)}
-              style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer", fontSize: 14, padding: 2 }}>
+          {/* Toggle */}
+          <div style={{ height: 32, display: "flex", alignItems: "center", justifyContent: open ? "flex-end" : "center", padding: "0 8px", borderBottom: "1px solid #444" }}>
+            <button onClick={() => setOpen(!open)} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 12, padding: 4 }}>
               {open ? "◀" : "▶"}
             </button>
           </div>
 
-          {/* Navigation */}
-          <nav style={{ padding: "10px 8px", flex: 1, overflowY: "auto" }}>
-
-            <SectionLabel label="Module" />
-            {NAV_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
-
-            <Divider />
-            <SectionLabel label="Kontakte" />
-            {KONTAKT_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
-
-            {isAdmin && (
-              <>
-                <Divider />
-                <SectionLabel label="Administration" />
-                {ADMIN_ITEMS.map(item => <NavLink key={item.href} {...item} />)}
-              </>
-            )}
+          {/* Nav */}
+          <nav style={{ flex: 1, overflowY: "auto", paddingTop: 6 }}>
+            <Sep label="Module" />
+            {NAV_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
+            <Sep />
+            <Sep label="Kontakte" />
+            {KONTAKT_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
+            {isAdmin && (<>
+              <Sep />
+              <Sep label="Admin" />
+              {ADMIN_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
+            </>)}
           </nav>
 
-          {/* User-Bereich */}
-          {open && (
-            <div style={{ padding: "12px 14px", borderTop: `1px solid ${RN.navyLight}` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: "50%",
-                  background: RN.gold + "22", border: `2px solid ${RN.gold}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, fontWeight: 800, color: RN.gold, flexShrink: 0,
-                }}>
-                  {initials}
-                </div>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e2e8f0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 130 }}>{user?.name}</div>
-                  <div style={{ fontSize: 10, color: ROLLE_COLOR[rolle] || RN.gold }}>{ROLLE_LABEL[rolle] || rolle}</div>
-                </div>
-              </div>
-              <div style={{ marginTop: 10, padding: "5px 8px", background: RN.navyLight, borderRadius: 6, textAlign: "center" }}>
-                <div style={{ fontSize: 9, color: "#475569" }}>Powered by</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: RN.gold, letterSpacing: "1px" }}>SPIDERFROG AG</div>
-              </div>
+          {/* User */}
+          <div style={{ padding: "10px 10px", borderTop: "1px solid #444", display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.white, flexShrink: 0 }}>
+              {initials}
             </div>
-          )}
+            {open && (
+              <div style={{ overflow: "hidden" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: C.white, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
+                <div style={{ fontSize: 10, color: "#888" }}>{user?.email}</div>
+              </div>
+            )}
+          </div>
         </aside>
 
-        {/* ── Main Content ─────────────────────────────────────────────────── */}
-        <main style={{ flex: 1, overflow: "auto", background: RN.bg }}>
+        {/* ── Content ──────────────────────────────────────────────────────── */}
+        <main style={{ flex: 1, overflow: "auto", background: C.bg }}>
           {children}
         </main>
       </div>

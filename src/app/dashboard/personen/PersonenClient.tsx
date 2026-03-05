@@ -1,26 +1,35 @@
 "use client";
 import { useState, useMemo } from "react";
 
+const C = {
+  topbar:  "#1a1a1a",
+  sidebar: "#2d2d2d",
+  accent:  "#0099cc",
+  bg:      "#f0f0f0",
+  white:   "#ffffff",
+  border:  "#cccccc",
+  rowA:    "#ffffff",
+  rowB:    "#f7f7f7",
+  label:   "#555555",
+  text:    "#222222",
+};
+
 const ROLLEN_LABEL: Record<string, string> = {
-  BENUTZER:     "Benutzer",
-  LIEFERANT:    "Lieferant",
-  BAUHERR:      "Bauherr",
-  PLANER:       "Planer",
-  UNTERNEHMER:  "Unternehmer",
-  KONTAKT:      "Kontakt",
+  BENUTZER: "Benutzer", LIEFERANT: "Lieferant", BAUHERR: "Bauherr",
+  PLANER: "Planer", UNTERNEHMER: "Unternehmer", KONTAKT: "Kontakt",
 };
-
 const ROLLEN_COLOR: Record<string, string> = {
-  BENUTZER:    "#3b82f6",
-  LIEFERANT:   "#f59e0b",
-  BAUHERR:     "#c0392b",
-  PLANER:      "#8b5cf6",
-  UNTERNEHMER: "#22c55e",
-  KONTAKT:     "#6b7280",
+  BENUTZER: "#0099cc", LIEFERANT: "#f59e0b", BAUHERR: "#c0392b",
+  PLANER: "#8b5cf6", UNTERNEHMER: "#22c55e", KONTAKT: "#6b7280",
 };
-
-const SPRACHEN = ["DE", "FR", "IT", "EN"];
 const ALLE_ROLLEN = ["BENUTZER", "LIEFERANT", "BAUHERR", "PLANER", "UNTERNEHMER", "KONTAKT"];
+const SPRACHEN = ["DE", "FR", "IT", "EN"];
+
+const SUB_NAV = [
+  "Übersicht", "Persönliche Daten", "Kommunikation", "Adressen",
+  "Finanzielle Angaben", "Zahlungsverbindungen", "Rollen & Zuordnung",
+  "Projekte", "Dokumente", "Notizen",
+];
 
 const EMPTY_FORM = {
   typ: "PRIVATPERSON", rollen: [] as string[], name: "", vorname: "",
@@ -35,13 +44,14 @@ const EMPTY_FORM = {
 export function PersonenClient({ personen: initial }: { personen: any[] }) {
   const [personen, setPersonen]   = useState(initial);
   const [search, setSearch]       = useState("");
-  const [rolleFilter, setRolle]   = useState<string[]>([]);
-  const [typFilter, setTyp]       = useState<string[]>([]);
+  const [selected, setSelected]   = useState<any>(null);
+  const [subPage, setSubPage]     = useState("Übersicht");
   const [showModal, setShowModal] = useState(false);
   const [editPerson, setEdit]     = useState<any>(null);
   const [form, setForm]           = useState<any>(EMPTY_FORM);
   const [saving, setSaving]       = useState(false);
-  const [detail, setDetail]       = useState<any>(null);
+  const [rolleFilter, setRolle]   = useState<string[]>([]);
+  const [typFilter, setTyp]       = useState<string[]>([]);
 
   const firmen = personen.filter(p => p.typ === "FIRMA");
 
@@ -55,310 +65,402 @@ export function PersonenClient({ personen: initial }: { personen: any[] }) {
     return list;
   }, [personen, search, rolleFilter, typFilter]);
 
-  const openNew = () => {
-    setEdit(null);
-    setForm(EMPTY_FORM);
-    setShowModal(true);
-  };
-
+  const openNew = () => { setEdit(null); setForm(EMPTY_FORM); setShowModal(true); };
   const openEdit = (p: any) => {
     setEdit(p);
-    setForm({
-      ...EMPTY_FORM, ...p,
-      geburtsdatum: p.geburtsdatum ? p.geburtsdatum.substring(0, 10) : "",
-      arbeitgeberId: p.arbeitgeberId || "",
-    });
+    setForm({ ...EMPTY_FORM, ...p, geburtsdatum: p.geburtsdatum ? p.geburtsdatum.substring(0, 10) : "", arbeitgeberId: p.arbeitgeberId || "" });
     setShowModal(true);
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      const url    = editPerson ? `/api/personen/${editPerson.id}` : "/api/personen";
-      const method = editPerson ? "PUT" : "POST";
-      const res    = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const url = editPerson ? `/api/personen/${editPerson.id}` : "/api/personen";
+      const res = await fetch(url, { method: editPerson ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
       if (res.ok) {
         const saved = await res.json();
-        if (editPerson) setPersonen(ps => ps.map(p => p.id === saved.id ? saved : p));
-        else            setPersonen(ps => [...ps, saved]);
+        if (editPerson) { setPersonen(ps => ps.map(p => p.id === saved.id ? saved : p)); setSelected(saved); }
+        else setPersonen(ps => [...ps, saved]);
         setShowModal(false);
       }
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Person wirklich löschen?")) return;
     await fetch(`/api/personen/${id}`, { method: "DELETE" });
     setPersonen(ps => ps.filter(p => p.id !== id));
-    setDetail(null);
+    setSelected(null);
+  };
+
+  const Row = ({ label, value }: { label: string; value?: string | null }) =>
+    value ? (
+      <tr>
+        <td style={{ padding: "6px 12px", width: 180, color: C.label, fontWeight: 400, fontSize: 12, verticalAlign: "top" }}>{label}</td>
+        <td style={{ padding: "6px 12px", color: C.text, fontSize: 12 }}>{value}</td>
+      </tr>
+    ) : null;
+
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ background: C.accent, color: C.white, padding: "5px 12px", fontSize: 12, fontWeight: 600 }}>{title}</div>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          {children}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderSubPage = (p: any) => {
+    switch (subPage) {
+      case "Übersicht":
+        return (
+          <div>
+            <Section title="Aktuelle Adresse">
+              <Row label="" value={p.typ === "FIRMA" ? p.firmaName : `${p.vorname || ""} ${p.name}`.trim()} />
+              <Row label="" value={p.strasse} />
+              <Row label="" value={p.plz && p.ort ? `${p.plz} ${p.ort}` : p.ort} />
+            </Section>
+            {(p.geschaeftsStrasse || p.geschaeftsOrt) && (
+              <Section title="Geschäftsadresse">
+                <Row label="" value={p.geschaeftsStrasse} />
+                <Row label="" value={p.geschaeftsPlz && p.geschaeftsOrt ? `${p.geschaeftsPlz} ${p.geschaeftsOrt}` : p.geschaeftsOrt} />
+              </Section>
+            )}
+            <Section title="Kommunikation">
+              {p.telefon && <Row label="" value={`${p.telefon} (Geschäft)`} />}
+              {p.telefonMobil && <Row label="" value={`${p.telefonMobil} (Mobile)`} />}
+              {p.email && <Row label="" value={`${p.email} (E-Mail)`} />}
+              {p.webseite && <Row label="" value={`${p.webseite} (Webseite)`} />}
+            </Section>
+            <Section title="Rollen">
+              <tr><td colSpan={2} style={{ padding: "8px 12px" }}>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {p.rollen.map((r: string) => (
+                    <span key={r} style={{ background: (ROLLEN_COLOR[r] || "#666") + "22", color: ROLLEN_COLOR[r] || "#666", padding: "2px 10px", borderRadius: 3, fontSize: 11, fontWeight: 600, border: `1px solid ${ROLLEN_COLOR[r]}44` }}>
+                      {ROLLEN_LABEL[r]}
+                    </span>
+                  ))}
+                </div>
+              </td></tr>
+            </Section>
+            {(p.uid || p.iban) && (
+              <Section title="Finanzen">
+                <Row label="UID / MwSt" value={p.uid} />
+                <Row label="IBAN" value={p.iban} />
+              </Section>
+            )}
+          </div>
+        );
+      case "Persönliche Daten":
+        return (
+          <Section title="Persönliche Daten">
+            <Row label="Typ" value={p.typ === "FIRMA" ? "Firma" : "Privatperson"} />
+            <Row label="Name" value={p.name} />
+            <Row label="Vorname" value={p.vorname} />
+            <Row label="Firmenname" value={p.firmaName} />
+            <Row label="Funktion" value={p.funktion} />
+            <Row label="Abteilung" value={p.abteilung} />
+            <Row label="Geburtsdatum" value={p.geburtsdatum ? new Date(p.geburtsdatum).toLocaleDateString("de-CH") : null} />
+            <Row label="Sprache" value={p.sprache} />
+            <Row label="Arbeitgeber" value={p.arbeitgeber ? (p.arbeitgeber.firmaName || p.arbeitgeber.name) : null} />
+          </Section>
+        );
+      case "Kommunikation":
+        return (
+          <Section title="Kommunikation">
+            <Row label="Telefon Geschäft" value={p.telefon} />
+            <Row label="Mobile" value={p.telefonMobil} />
+            <Row label="E-Mail Geschäft" value={p.email} />
+            <Row label="Webseite" value={p.webseite} />
+            <Row label="Korrespondenzsprache" value={p.sprache} />
+          </Section>
+        );
+      case "Adressen":
+        return (
+          <div>
+            <Section title="Privatadresse">
+              <Row label="Strasse" value={p.strasse} />
+              <Row label="PLZ" value={p.plz} />
+              <Row label="Ort" value={p.ort} />
+              <Row label="Land" value={p.land} />
+            </Section>
+            <Section title="Geschäftsadresse">
+              <Row label="Strasse" value={p.geschaeftsStrasse} />
+              <Row label="PLZ" value={p.geschaeftsPlz} />
+              <Row label="Ort" value={p.geschaeftsOrt} />
+            </Section>
+          </div>
+        );
+      case "Finanzielle Angaben":
+        return (
+          <Section title="Finanzielle Angaben">
+            <Row label="UID / MwSt-Nummer" value={p.uid} />
+            <Row label="IBAN" value={p.iban} />
+          </Section>
+        );
+      case "Zahlungsverbindungen":
+        return (
+          <Section title="Zahlungsverbindungen">
+            <Row label="IBAN" value={p.iban || "— Keine IBAN hinterlegt"} />
+          </Section>
+        );
+      case "Rollen & Zuordnung":
+        return (
+          <Section title="Rollen">
+            <tr><td colSpan={2} style={{ padding: "10px 12px" }}>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {p.rollen.length > 0 ? p.rollen.map((r: string) => (
+                  <span key={r} style={{ background: (ROLLEN_COLOR[r] || "#666") + "22", color: ROLLEN_COLOR[r] || "#666", padding: "4px 14px", borderRadius: 3, fontSize: 12, fontWeight: 600, border: `1px solid ${ROLLEN_COLOR[r]}44` }}>
+                    {ROLLEN_LABEL[r]}
+                  </span>
+                )) : <span style={{ color: "#999", fontSize: 12 }}>Keine Rollen zugewiesen</span>}
+              </div>
+            </td></tr>
+          </Section>
+        );
+      case "Projekte":
+        return (
+          <Section title="Verknüpfte Projekte">
+            {p.projekte?.length > 0 ? p.projekte.map((pp: any) => (
+              <tr key={pp.id}>
+                <td style={{ padding: "6px 12px", color: C.accent, fontWeight: 700, fontSize: 12, width: 120 }}>{pp.projekt.nummer}</td>
+                <td style={{ padding: "6px 12px", fontSize: 12 }}>{pp.projekt.name} {pp.funktion && <span style={{ color: "#999" }}>· {pp.funktion}</span>}</td>
+              </tr>
+            )) : <tr><td colSpan={2} style={{ padding: "10px 12px", color: "#999", fontSize: 12 }}>Keine Projekte verknüpft</td></tr>}
+          </Section>
+        );
+      case "Notizen":
+        return (
+          <Section title="Notizen">
+            <tr><td colSpan={2} style={{ padding: "10px 12px", fontSize: 12, color: p.notizen ? C.text : "#999", whiteSpace: "pre-wrap" }}>
+              {p.notizen || "Keine Notizen vorhanden"}
+            </td></tr>
+          </Section>
+        );
+      default:
+        return <div style={{ padding: 20, color: "#999", fontSize: 12 }}>Dieser Bereich ist noch nicht implementiert.</div>;
+    }
   };
 
   const F = (label: string, key: string, type = "text", opts?: any) => (
-    <div style={{ marginBottom: 12 }}>
-      <label style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", letterSpacing: "0.5px", display: "block", marginBottom: 4 }}>{label}</label>
+    <div style={{ marginBottom: 10 }}>
+      <label style={{ fontSize: 11, color: "#666", display: "block", marginBottom: 3 }}>{label}</label>
       {type === "textarea" ? (
         <textarea value={form[key] || ""} onChange={e => setForm((f: any) => ({ ...f, [key]: e.target.value }))} rows={3}
-          style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, fontFamily: "inherit", resize: "vertical" }} />
+          style={{ width: "100%", padding: "5px 8px", border: "1px solid #ccc", borderRadius: 3, fontSize: 12, fontFamily: "inherit", resize: "vertical" }} />
       ) : type === "select" ? (
         <select value={form[key] || ""} onChange={e => setForm((f: any) => ({ ...f, [key]: e.target.value }))}
-          style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, background: "#fff" }}>
+          style={{ width: "100%", padding: "5px 8px", border: "1px solid #ccc", borderRadius: 3, fontSize: 12, background: "#fff" }}>
           <option value="">— Auswählen —</option>
           {opts?.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       ) : (
         <input type={type} value={form[key] || ""} onChange={e => setForm((f: any) => ({ ...f, [key]: e.target.value }))}
-          style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13 }} />
+          style={{ width: "100%", padding: "5px 8px", border: "1px solid #ccc", borderRadius: 3, fontSize: 12 }} />
       )}
     </div>
   );
 
-  const Section = ({ title }: { title: string }) => (
-    <div style={{ fontSize: 11, fontWeight: 700, color: "#c0392b", textTransform: "uppercase", letterSpacing: "0.8px", borderBottom: "2px solid #c0392b", paddingBottom: 4, marginBottom: 12, marginTop: 20 }}>{title}</div>
+  const SectionLabel = ({ t }: { t: string }) => (
+    <div style={{ background: C.accent, color: C.white, padding: "4px 10px", fontSize: 11, fontWeight: 700, margin: "14px 0 8px", borderRadius: 2 }}>{t}</div>
   );
 
   return (
-    <div style={{ display: "flex", height: "100%", overflow: "hidden", fontFamily: "Segoe UI, sans-serif" }}>
+    <div style={{ display: "flex", height: "100%", overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif", fontSize: 12 }}>
 
-      {/* ── Hauptbereich ────────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {selected ? (
+        /* ── Detailansicht mit Sub-Nav ─────────────────────────────────────── */
+        <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* Header */}
-        <div style={{ padding: "12px 16px", background: "#fff", borderBottom: "1px solid #ddd", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <div>
-            <h1 style={{ fontSize: 16, fontWeight: 700, color: "#333" }}>Personenverwaltung</h1>
-            <div style={{ fontSize: 11, color: "#999" }}>{filtered.length} von {personen.length} Personen</div>
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Suchen..." style={{ padding: "5px 10px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, width: 220 }} />
-            <button onClick={openNew} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 5, padding: "6px 14px", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-              + Neue Person
-            </button>
-          </div>
-        </div>
-
-        {/* Tabelle */}
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
-              <tr style={{ background: "#e8e8e8", borderBottom: "2px solid #ccc" }}>
-                {["Typ", "Name", "Funktion", "Rollen", "E-Mail", "Telefon", "Ort", ""].map(h => (
-                  <th key={h} style={{ padding: "7px 10px", textAlign: "left", fontWeight: 600, color: "#555", fontSize: 12 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p, i) => (
-                <tr key={p.id}
-                  onClick={() => setDetail(p)}
-                  style={{ background: detail?.id === p.id ? "#fce8e8" : i % 2 === 0 ? "#fff" : "#f9f9f9", borderBottom: "1px solid #eee", cursor: "pointer" }}
-                  onMouseEnter={e => { if (detail?.id !== p.id) (e.currentTarget as HTMLElement).style.background = "#fff3f3"; }}
-                  onMouseLeave={e => { if (detail?.id !== p.id) (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? "#fff" : "#f9f9f9"; }}
-                >
-                  <td style={{ padding: "7px 10px" }}>
-                    <span style={{ background: p.typ === "FIRMA" ? "#3b82f620" : "#22c55e20", color: p.typ === "FIRMA" ? "#3b82f6" : "#16a34a", padding: "1px 7px", borderRadius: 3, fontSize: 11, fontWeight: 600 }}>
-                      {p.typ === "FIRMA" ? "🏢 Firma" : "👤 Person"}
-                    </span>
-                  </td>
-                  <td style={{ padding: "7px 10px", fontWeight: 600 }}>
-                    {p.typ === "FIRMA" ? p.firmaName || p.name : `${p.name}${p.vorname ? ", " + p.vorname : ""}`}
-                    {p.arbeitgeber && <div style={{ fontSize: 10, color: "#999" }}>{p.arbeitgeber.firmaName || p.arbeitgeber.name}</div>}
-                  </td>
-                  <td style={{ padding: "7px 10px", color: "#666" }}>{p.funktion || "–"}</td>
-                  <td style={{ padding: "7px 10px" }}>
-                    <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-                      {p.rollen.map((r: string) => (
-                        <span key={r} style={{ background: (ROLLEN_COLOR[r] || "#666") + "22", color: ROLLEN_COLOR[r] || "#666", padding: "1px 6px", borderRadius: 3, fontSize: 10, fontWeight: 600 }}>
-                          {ROLLEN_LABEL[r]}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td style={{ padding: "7px 10px", color: "#555" }}>{p.email || "–"}</td>
-                  <td style={{ padding: "7px 10px", color: "#666" }}>{p.telefon || p.telefonMobil || "–"}</td>
-                  <td style={{ padding: "7px 10px", color: "#666" }}>{p.ort || p.geschaeftsOrt || "–"}</td>
-                  <td style={{ padding: "7px 10px", textAlign: "center" }}>
-                    <button onClick={e => { e.stopPropagation(); openEdit(p); }} style={{ background: "none", border: "none", color: "#c0392b", cursor: "pointer", fontSize: 14 }}>✏️</button>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={8} style={{ padding: 40, textAlign: "center", color: "#999" }}>Keine Personen gefunden</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── Rechte Sidebar: Filter ───────────────────────────────────────────── */}
-      {!detail && (
-        <div style={{ width: 180, background: "#f8f8f8", borderLeft: "1px solid #ddd", padding: 10, overflowY: "auto", flexShrink: 0, fontSize: 12 }}>
-          <div style={{ fontSize: 10, color: "#999", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Filter</div>
-          <div style={{ fontWeight: 700, color: "#555", marginBottom: 4 }}>▸ Typ</div>
-          {[["PRIVATPERSON", "👤 Privatperson"], ["FIRMA", "🏢 Firma"]].map(([val, label]) => (
-            <label key={val} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 0", cursor: "pointer" }}>
-              <input type="checkbox" checked={typFilter.includes(val)} onChange={e => setTyp(s => e.target.checked ? [...s, val] : s.filter(x => x !== val))} />
-              <span>{label}</span>
-            </label>
-          ))}
-          <div style={{ fontWeight: 700, color: "#555", margin: "12px 0 4px" }}>▸ Rolle</div>
-          {ALLE_ROLLEN.map(r => (
-            <label key={r} style={{ display: "flex", alignItems: "center", gap: 4, padding: "2px 0", cursor: "pointer" }}>
-              <input type="checkbox" checked={rolleFilter.includes(r)} onChange={e => setRolle(s => e.target.checked ? [...s, r] : s.filter(x => x !== r))} />
-              <span style={{ color: ROLLEN_COLOR[r] }}>{ROLLEN_LABEL[r]}</span>
-            </label>
-          ))}
-          {(rolleFilter.length > 0 || typFilter.length > 0) && (
-            <button onClick={() => { setRolle([]); setTyp([]); }} style={{ marginTop: 12, width: "100%", padding: 5, background: "#c0392b22", color: "#c0392b", border: "1px solid #c0392b44", borderRadius: 4, cursor: "pointer", fontSize: 11, fontWeight: 600 }}>
-              Zurücksetzen
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* ── Detailansicht ────────────────────────────────────────────────────── */}
-      {detail && (
-        <div style={{ width: 300, background: "#fff", borderLeft: "1px solid #ddd", overflowY: "auto", flexShrink: 0 }}>
-          <div style={{ padding: "12px 14px", borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, fontSize: 13 }}>Details</span>
-            <button onClick={() => setDetail(null)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#999" }}>×</button>
-          </div>
-
-          {/* Avatar */}
-          <div style={{ padding: "16px 14px", textAlign: "center", borderBottom: "1px solid #eee" }}>
-            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#c0392b22", border: "2px solid #c0392b44", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 22, marginBottom: 8 }}>
-              {detail.typ === "FIRMA" ? "🏢" : "👤"}
-            </div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>
-              {detail.typ === "FIRMA" ? detail.firmaName || detail.name : `${detail.vorname || ""} ${detail.name}`}
-            </div>
-            {detail.funktion && <div style={{ fontSize: 12, color: "#999" }}>{detail.funktion}</div>}
-            {detail.arbeitgeber && <div style={{ fontSize: 11, color: "#c0392b" }}>{detail.arbeitgeber.firmaName || detail.arbeitgeber.name}</div>}
-            <div style={{ display: "flex", gap: 4, justifyContent: "center", marginTop: 8, flexWrap: "wrap" }}>
-              {detail.rollen.map((r: string) => (
-                <span key={r} style={{ background: (ROLLEN_COLOR[r] || "#666") + "22", color: ROLLEN_COLOR[r] || "#666", padding: "2px 8px", borderRadius: 3, fontSize: 10, fontWeight: 600 }}>
-                  {ROLLEN_LABEL[r]}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Info-Zeilen */}
-          <div style={{ padding: "10px 14px" }}>
-            {[
-              { icon: "📧", label: detail.email },
-              { icon: "📞", label: detail.telefon },
-              { icon: "📱", label: detail.telefonMobil },
-              { icon: "🌐", label: detail.webseite },
-              { icon: "🏠", label: [detail.strasse, detail.plz, detail.ort].filter(Boolean).join(", ") },
-              { icon: "🏢", label: [detail.geschaeftsStrasse, detail.geschaeftsPlz, detail.geschaeftsOrt].filter(Boolean).join(", ") },
-              { icon: "🎂", label: detail.geburtsdatum ? new Date(detail.geburtsdatum).toLocaleDateString("de-CH") : null },
-              { icon: "🏦", label: detail.iban },
-              { icon: "🔢", label: detail.uid ? `UID: ${detail.uid}` : null },
-              { icon: "💬", label: detail.sprache ? `Sprache: ${detail.sprache}` : null },
-            ].filter(x => x.label).map((x, i) => (
-              <div key={i} style={{ display: "flex", gap: 8, padding: "5px 0", borderBottom: "1px solid #f5f5f5", fontSize: 12 }}>
-                <span>{x.icon}</span>
-                <span style={{ color: "#555" }}>{x.label}</span>
+          {/* Sub-Sidebar */}
+          <div style={{ width: 180, background: C.sidebar, flexShrink: 0, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+            {/* Person-Header in Sub-Sidebar */}
+            <div style={{ padding: "10px 12px", borderBottom: "1px solid #444", background: "#222" }}>
+              <div style={{ fontSize: 10, color: "#888", marginBottom: 2 }}>
+                {selected.typ === "FIRMA" ? "Firma" : "Privatperson"} · {selected.id.slice(-6).toUpperCase()}
               </div>
-            ))}
+              <div style={{ fontSize: 12, fontWeight: 700, color: C.white, lineHeight: 1.3 }}>
+                {selected.typ === "FIRMA" ? selected.firmaName || selected.name : `${selected.vorname || ""} ${selected.name}`.trim()}
+              </div>
+              {selected.funktion && <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{selected.funktion}</div>}
+            </div>
 
-            {detail.projekte?.length > 0 && (
-              <>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#c0392b", marginTop: 12, marginBottom: 6 }}>PROJEKTE</div>
-                {detail.projekte.map((pp: any) => (
-                  <div key={pp.id} style={{ fontSize: 11, padding: "3px 0", color: "#555" }}>
-                    <span style={{ color: "#c0392b", fontWeight: 700 }}>{pp.projekt.nummer}</span> {pp.projekt.name}
-                    {pp.funktion && <span style={{ color: "#999" }}> · {pp.funktion}</span>}
-                  </div>
-                ))}
-              </>
-            )}
+            {/* Sub-Nav Items */}
+            <nav style={{ flex: 1 }}>
+              {SUB_NAV.map(item => (
+                <button key={item} onClick={() => setSubPage(item)}
+                  style={{
+                    display: "block", width: "100%", textAlign: "left",
+                    padding: "7px 14px", fontSize: 12, border: "none", cursor: "pointer",
+                    background: subPage === item ? C.accent : "transparent",
+                    color: subPage === item ? C.white : "#aaa",
+                    borderLeft: subPage === item ? "3px solid #66ccee" : "3px solid transparent",
+                    fontWeight: subPage === item ? 600 : 400,
+                  }}>
+                  {item}
+                </button>
+              ))}
+            </nav>
 
-            {detail.mitarbeiter?.length > 0 && (
-              <>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#c0392b", marginTop: 12, marginBottom: 6 }}>MITARBEITER ({detail.mitarbeiter.length})</div>
-                {detail.mitarbeiter.map((m: any) => (
-                  <div key={m.id} style={{ fontSize: 11, padding: "3px 0", color: "#555" }}>👤 {m.vorname} {m.name}</div>
-                ))}
-              </>
-            )}
-
-            {detail.notizen && (
-              <>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#c0392b", marginTop: 12, marginBottom: 6 }}>NOTIZEN</div>
-                <div style={{ fontSize: 12, color: "#555", whiteSpace: "pre-wrap" }}>{detail.notizen}</div>
-              </>
-            )}
-
-            <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-              <button onClick={() => openEdit(detail)} style={{ flex: 1, padding: "7px", background: "#c0392b", color: "#fff", border: "none", borderRadius: 5, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
-                ✏️ Bearbeiten
-              </button>
-              <button onClick={() => handleDelete(detail.id)} style={{ padding: "7px 10px", background: "#fee2e2", color: "#c0392b", border: "1px solid #c0392b44", borderRadius: 5, fontSize: 12, cursor: "pointer" }}>
-                🗑️
+            {/* Zurück-Button */}
+            <div style={{ padding: "10px 12px", borderTop: "1px solid #444" }}>
+              <button onClick={() => setSelected(null)}
+                style={{ width: "100%", padding: "5px 8px", background: "#444", color: "#ccc", border: "none", borderRadius: 3, fontSize: 11, cursor: "pointer" }}>
+                ◀ Zurück zur Liste
               </button>
             </div>
+          </div>
+
+          {/* Sub-Content */}
+          <div style={{ flex: 1, overflow: "auto", background: C.bg }}>
+
+            {/* Sub-Header (Immopac-style blauer Balken) */}
+            <div style={{ background: C.accent, color: C.white, padding: "6px 14px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>
+                {selected.typ === "FIRMA" ? selected.firmaName || selected.name : `${selected.vorname || ""} ${selected.name}`.trim()}
+                <span style={{ fontWeight: 400, marginLeft: 10, fontSize: 11, opacity: 0.8 }}>{subPage}</span>
+              </span>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => openEdit(selected)}
+                  style={{ padding: "3px 10px", background: "rgba(255,255,255,0.2)", color: C.white, border: "1px solid rgba(255,255,255,0.4)", borderRadius: 3, fontSize: 11, cursor: "pointer" }}>
+                  Bearbeiten
+                </button>
+                <button onClick={() => handleDelete(selected.id)}
+                  style={{ padding: "3px 10px", background: "rgba(255,0,0,0.3)", color: C.white, border: "1px solid rgba(255,0,0,0.4)", borderRadius: 3, fontSize: 11, cursor: "pointer" }}>
+                  Löschen
+                </button>
+              </div>
+            </div>
+
+            {/* Sub-Page Content */}
+            <div style={{ padding: 14 }}>
+              {renderSubPage(selected)}
+            </div>
+          </div>
+        </div>
+
+      ) : (
+        /* ── Listenansicht ─────────────────────────────────────────────────── */
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+          {/* Toolbar */}
+          <div style={{ background: C.white, padding: "8px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ background: C.accent, color: C.white, padding: "4px 12px", fontSize: 12, fontWeight: 700, borderRadius: 2 }}>Kontakte</div>
+              <span style={{ color: "#999", fontSize: 11 }}>{filtered.length} Einträge</span>
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Suchen (F1)..."
+                style={{ padding: "4px 10px", border: `1px solid ${C.border}`, borderRadius: 3, fontSize: 12, width: 240 }} />
+              <select value={typFilter[0] || ""} onChange={e => setTyp(e.target.value ? [e.target.value] : [])}
+                style={{ padding: "4px 8px", border: `1px solid ${C.border}`, borderRadius: 3, fontSize: 12, background: "#fff" }}>
+                <option value="">Alle Typen</option>
+                <option value="PRIVATPERSON">Privatperson</option>
+                <option value="FIRMA">Firma</option>
+              </select>
+              <button onClick={openNew}
+                style={{ padding: "4px 12px", background: C.accent, color: C.white, border: "none", borderRadius: 3, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                + Neu
+              </button>
+            </div>
+          </div>
+
+          {/* Tabelle */}
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead style={{ position: "sticky", top: 0, zIndex: 2 }}>
+                <tr style={{ background: "#e0e0e0", borderBottom: "2px solid #bbb" }}>
+                  {["Typ", "Name / Firma", "Funktion", "Ort", "Telefon", "E-Mail", "Rollen"].map(h => (
+                    <th key={h} style={{ padding: "6px 10px", textAlign: "left", fontWeight: 700, color: "#444", fontSize: 11, whiteSpace: "nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p, i) => (
+                  <tr key={p.id} onClick={() => { setSelected(p); setSubPage("Übersicht"); }}
+                    style={{ background: i % 2 === 0 ? C.rowA : C.rowB, borderBottom: `1px solid #e8e8e8`, cursor: "pointer" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e8f4ff"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = i % 2 === 0 ? C.rowA : C.rowB}>
+                    <td style={{ padding: "5px 10px" }}>
+                      <span style={{ fontSize: 10, background: p.typ === "FIRMA" ? "#dbeafe" : "#dcfce7", color: p.typ === "FIRMA" ? "#1d4ed8" : "#166534", padding: "1px 6px", borderRadius: 2, fontWeight: 600 }}>
+                        {p.typ === "FIRMA" ? "Firma" : "Person"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "5px 10px", fontWeight: 600 }}>
+                      {p.typ === "FIRMA" ? p.firmaName || p.name : `${p.name}${p.vorname ? ", " + p.vorname : ""}`}
+                      {p.arbeitgeber && <span style={{ color: "#999", fontWeight: 400 }}> · {p.arbeitgeber.firmaName || p.arbeitgeber.name}</span>}
+                    </td>
+                    <td style={{ padding: "5px 10px", color: "#555" }}>{p.funktion || "–"}</td>
+                    <td style={{ padding: "5px 10px", color: "#555" }}>{p.ort || p.geschaeftsOrt || "–"}</td>
+                    <td style={{ padding: "5px 10px", color: "#555" }}>{p.telefon || p.telefonMobil || "–"}</td>
+                    <td style={{ padding: "5px 10px", color: "#555" }}>{p.email || "–"}</td>
+                    <td style={{ padding: "5px 10px" }}>
+                      <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                        {p.rollen.slice(0, 2).map((r: string) => (
+                          <span key={r} style={{ background: (ROLLEN_COLOR[r] || "#666") + "22", color: ROLLEN_COLOR[r] || "#666", padding: "1px 5px", borderRadius: 2, fontSize: 10, fontWeight: 600 }}>
+                            {ROLLEN_LABEL[r]}
+                          </span>
+                        ))}
+                        {p.rollen.length > 2 && <span style={{ color: "#999", fontSize: 10 }}>+{p.rollen.length - 2}</span>}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filtered.length === 0 && (
+                  <tr><td colSpan={7} style={{ padding: 30, textAlign: "center", color: "#999" }}>Keine Einträge gefunden</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* ── Modal: Neue/Bearbeiten ────────────────────────────────────────────── */}
+      {/* ── Modal ── */}
       {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "#00000055", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: "#fff", borderRadius: 12, width: 640, maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 20px 60px #00000044" }}>
-
-            {/* Modal Header */}
-            <div style={{ padding: "14px 20px", borderBottom: "1px solid #eee", display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
-              <span style={{ fontWeight: 700, fontSize: 15 }}>{editPerson ? "Person bearbeiten" : "Neue Person erfassen"}</span>
-              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#999" }}>×</button>
+        <div style={{ position: "fixed", inset: 0, background: "#00000066", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ background: C.white, width: 620, maxHeight: "90vh", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: "0 8px 40px #00000055", borderRadius: 4 }}>
+            <div style={{ background: C.accent, color: C.white, padding: "8px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{editPerson ? "Person bearbeiten" : "Neue Person erfassen"}</span>
+              <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", color: C.white, fontSize: 18, cursor: "pointer" }}>×</button>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
-
-              <Section title="Grunddaten" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ padding: "14px 16px", overflowY: "auto", flex: 1 }}>
+              <SectionLabel t="Grunddaten" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Typ</label>
+                  <label style={{ fontSize: 11, color: "#666", display: "block", marginBottom: 3 }}>Typ</label>
                   <select value={form.typ} onChange={e => setForm((f: any) => ({ ...f, typ: e.target.value }))}
-                    style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, background: "#fff" }}>
-                    <option value="PRIVATPERSON">👤 Privatperson</option>
-                    <option value="FIRMA">🏢 Firma</option>
+                    style={{ width: "100%", padding: "5px 8px", border: "1px solid #ccc", borderRadius: 3, fontSize: 12, background: "#fff" }}>
+                    <option value="PRIVATPERSON">Privatperson</option>
+                    <option value="FIRMA">Firma</option>
                   </select>
                 </div>
                 {F("Sprache", "sprache", "select", SPRACHEN.map(s => ({ value: s, label: s })))}
               </div>
-
               {form.typ === "FIRMA" ? (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {F("Firmenname *", "firmaName")}
-                  {F("Name (intern)", "name")}
+                  {F("Kürzel / intern", "name")}
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {F("Name *", "name")}
                   {F("Vorname", "vorname")}
                 </div>
               )}
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {F("Funktion / Titel", "funktion")}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {F("Funktion", "funktion")}
                 {F("Abteilung", "abteilung")}
               </div>
-
               {form.typ === "PRIVATPERSON" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                   {F("Geburtsdatum", "geburtsdatum", "date")}
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Arbeitgeber</label>
+                    <label style={{ fontSize: 11, color: "#666", display: "block", marginBottom: 3 }}>Arbeitgeber</label>
                     <select value={form.arbeitgeberId} onChange={e => setForm((f: any) => ({ ...f, arbeitgeberId: e.target.value }))}
-                      style={{ width: "100%", padding: "8px 10px", border: "1px solid #e0e0e0", borderRadius: 6, fontSize: 13, background: "#fff" }}>
+                      style={{ width: "100%", padding: "5px 8px", border: "1px solid #ccc", borderRadius: 3, fontSize: 12, background: "#fff" }}>
                       <option value="">— Kein Arbeitgeber —</option>
                       {firmen.map(f => <option key={f.id} value={f.id}>{f.firmaName || f.name}</option>)}
                     </select>
@@ -366,63 +468,54 @@ export function PersonenClient({ personen: initial }: { personen: any[] }) {
                 </div>
               )}
 
-              {/* Rollen */}
-              <div style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#888", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Rollen (mehrere möglich)</label>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {ALLE_ROLLEN.map(r => {
-                    const active = form.rollen.includes(r);
-                    return (
-                      <button key={r} type="button"
-                        onClick={() => setForm((f: any) => ({ ...f, rollen: active ? f.rollen.filter((x: string) => x !== r) : [...f.rollen, r] }))}
-                        style={{ padding: "4px 12px", borderRadius: 20, border: `2px solid ${ROLLEN_COLOR[r]}`, background: active ? ROLLEN_COLOR[r] : "transparent", color: active ? "#fff" : ROLLEN_COLOR[r], fontWeight: 600, fontSize: 12, cursor: "pointer" }}>
-                        {ROLLEN_LABEL[r]}
-                      </button>
-                    );
-                  })}
-                </div>
+              <SectionLabel t="Rollen" />
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                {ALLE_ROLLEN.map(r => {
+                  const active = form.rollen.includes(r);
+                  return (
+                    <button key={r} type="button"
+                      onClick={() => setForm((f: any) => ({ ...f, rollen: active ? f.rollen.filter((x: string) => x !== r) : [...f.rollen, r] }))}
+                      style={{ padding: "3px 10px", borderRadius: 3, border: `1px solid ${ROLLEN_COLOR[r]}`, background: active ? ROLLEN_COLOR[r] : "transparent", color: active ? "#fff" : ROLLEN_COLOR[r], fontWeight: 600, fontSize: 11, cursor: "pointer" }}>
+                      {ROLLEN_LABEL[r]}
+                    </button>
+                  );
+                })}
               </div>
 
-              <Section title="Kontakt" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <SectionLabel t="Kontakt" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {F("E-Mail", "email", "email")}
-                {F("Telefon", "telefon", "tel")}
+                {F("Telefon Geschäft", "telefon", "tel")}
                 {F("Mobile", "telefonMobil", "tel")}
                 {F("Webseite", "webseite", "url")}
               </div>
 
-              <Section title="Privatadresse" />
+              <SectionLabel t="Privatadresse" />
               {F("Strasse", "strasse")}
-              <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 1fr", gap: 12 }}>
-                {F("PLZ", "plz")}
-                {F("Ort", "ort")}
-                {F("Land", "land")}
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr 80px", gap: 10 }}>
+                {F("PLZ", "plz")} {F("Ort", "ort")} {F("Land", "land")}
               </div>
 
-              <Section title="Geschäftsadresse" />
+              <SectionLabel t="Geschäftsadresse" />
               {F("Strasse", "geschaeftsStrasse")}
-              <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12 }}>
-                {F("PLZ", "geschaeftsPlz")}
-                {F("Ort", "geschaeftsOrt")}
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 10 }}>
+                {F("PLZ", "geschaeftsPlz")} {F("Ort", "geschaeftsOrt")}
               </div>
 
-              <Section title="Finanzen & Steuer" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <SectionLabel t="Finanzen" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 {F("IBAN", "iban")}
-                {F("UID / MwSt-Nummer", "uid")}
+                {F("UID / MwSt-Nr.", "uid")}
               </div>
 
-              <Section title="Notizen" />
-              {F("Notizen / Bemerkungen", "notizen", "textarea")}
+              <SectionLabel t="Notizen" />
+              {F("Notizen", "notizen", "textarea")}
             </div>
 
-            {/* Modal Footer */}
-            <div style={{ padding: "12px 20px", borderTop: "1px solid #eee", display: "flex", justifyContent: "flex-end", gap: 8, flexShrink: 0 }}>
-              <button onClick={() => setShowModal(false)} style={{ padding: "8px 16px", border: "1px solid #ddd", borderRadius: 6, background: "#fff", cursor: "pointer", fontSize: 13 }}>
-                Abbrechen
-              </button>
+            <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "flex-end", gap: 8, background: "#f8f8f8" }}>
+              <button onClick={() => setShowModal(false)} style={{ padding: "5px 14px", border: `1px solid ${C.border}`, borderRadius: 3, background: C.white, cursor: "pointer", fontSize: 12 }}>Abbrechen</button>
               <button onClick={handleSave} disabled={saving || !form.name}
-                style={{ padding: "8px 20px", background: saving ? "#999" : "#c0392b", color: "#fff", border: "none", borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                style={{ padding: "5px 16px", background: saving ? "#999" : C.accent, color: C.white, border: "none", borderRadius: 3, fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                 {saving ? "Speichern..." : editPerson ? "Speichern" : "Erstellen"}
               </button>
             </div>
