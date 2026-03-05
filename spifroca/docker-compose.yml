@@ -1,0 +1,80 @@
+version: "3.9"
+
+services:
+  # ─── PostgreSQL Datenbank ──────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: spifroca_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spifroca}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spifroca_secret_2024}
+      POSTGRES_DB: ${POSTGRES_DB:-spifroca}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spifroca}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Next.js App ──────────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: spifroca_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-spifroca}:${POSTGRES_PASSWORD:-spifroca_secret_2024}@db:5432/${POSTGRES_DB:-spifroca}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change_me_in_production_min32chars!!}
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ─── DB Admin (Entwicklung) ───────────────────────────────────────────────
+  adminer:
+    image: adminer:latest
+    container_name: spifroca_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    profiles:
+      - dev
+
+  # ─── Next.js Dev Server ───────────────────────────────────────────────────
+  app_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: spifroca_app_dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-spifroca}:${POSTGRES_PASSWORD:-spifroca_secret_2024}@db:5432/${POSTGRES_DB:-spifroca}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-change_me_in_production_min32chars!!}
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
+    driver: local

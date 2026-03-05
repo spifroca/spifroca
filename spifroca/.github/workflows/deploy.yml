@@ -1,0 +1,67 @@
+name: Build and Deploy spifroca
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/spifroca-app
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: GitHub Container Registry anmelden
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Image bauen und pushen
+        run: |
+          docker build -f Dockerfile.synology -t ghcr.io/${{ env.IMAGE_NAME }}:latest -t ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} .
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:latest
+          docker push ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+
+  deploy:
+    name: Deploy auf Synology NAS
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Tailscale VPN verbinden
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_CLIENT_SECRET }}
+          tags: tag:ci
+
+      - name: NAS via SSH aktualisieren
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.NAS_HOST }}
+          username: ${{ secrets.NAS_USER }}
+          password: ${{ secrets.NAS_PASSWORD }}
+          port: ${{ secrets.NAS_SSH_PORT }}
+          command_timeout: 30m
+          script: |
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+            echo "Pull Image..."
+            sudo docker pull ghcr.io/spifroca/spifroca-app:latest
+            echo "Container neu starten..."
+            cd /volume1/docker/spifroca
+            sudo docker compose -f compose-live.yml down || true
+            sudo docker compose -f compose-live.yml up -d
+            echo "Warte auf Start..."
+            sleep 30
+            sudo docker exec spifroca_app npx prisma migrate deploy || true
+            sudo docker ps | grep spifroca
+            echo "Deployment erfolgreich!"

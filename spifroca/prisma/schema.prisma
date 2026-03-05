@@ -1,0 +1,432 @@
+// ─── spifroca Datenbank Schema ──────────────────────────────────────────────────
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Benutzerverwaltung ───────────────────────────────────────────────────────
+
+enum Rolle {
+  ADMINISTRATOR
+  PROJEKTLEITER
+  CONTROLLING
+  EXTERNER_PLANER
+  BETRACHTER
+}
+
+model Benutzer {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  name           String
+  rolle          Rolle     @default(BETRACHTER)
+  mandant        String    @default("Spiderfrog AG")
+  aktiv          Boolean   @default(true)
+  mfaAktiv       Boolean   @default(false)
+  mfaSecret      String?
+  letzterLogin   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Verknüpfung zu Kontakt
+  person         Person?          @relation(fields: [personId], references: [id])
+  personId       String?          @unique
+
+  // Beziehungen
+  projekte       Projekt[]        @relation("Projektleiter")
+  auditLogs      AuditLog[]
+
+  @@map("benutzer")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  benutzer    Benutzer @relation(fields: [benutzerId], references: [id])
+  benutzerId  String
+  aktion      String
+  tabelle     String?
+  datensatzId String?
+  details     Json?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+// ─── Projekte ─────────────────────────────────────────────────────────────────
+
+enum ProjektStatus {
+  AKQUISITION
+  OFFERTE
+  IN_VORBEREITUNG
+  IN_AUSFUEHRUNG
+  IN_ABRECHNUNG
+  GARANTIE_2J
+  GARANTIE_5J
+  ABGESCHLOSSEN
+}
+
+model Projekt {
+  id            String        @id @default(cuid())
+  nummer        String        @unique // z.B. "16299.00"
+  name          String
+  status        ProjektStatus @default(AKQUISITION)
+  gruppe        String?       // Basel, Bern, Zürich, etc.
+  anlage        String?
+  beschreibung  String?
+  
+  // Adressen & Kontakte
+  projektleiter   Benutzer? @relation("Projektleiter", fields: [projektleiterId], references: [id])
+  projektleiterId String?
+  bestellerName   String?
+  bestellerFirma  String?
+
+  // Finanzen
+  budgetTotal   Float?
+  budgetVerbraucht Float?
+
+  // Termine
+  startDatum    DateTime?
+  endDatum      DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Beziehungen
+  kostenplanung Kostenstelle[]
+  ausschreibungen Ausschreibung[]
+  meilensteine  Meilenstein[]
+  risiken       Risiko[]
+  kommunikation KommunikationsInfo[]
+  belege        Beleg[]
+  personen      ProjektPerson[]
+  machbarkeit   Machbarkeit?
+
+  @@map("projekte")
+}
+
+// ─── Kostenplanung ────────────────────────────────────────────────────────────
+
+model Kostenstelle {
+  id          String   @id @default(cuid())
+  projekt     Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String
+  bkp         String   // BKP-Code z.B. "211"
+  bezeichnung String
+  budget      Float    @default(0)
+  verbraucht  Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  positionen  KostenPosition[]
+
+  @@map("kostenstellen")
+}
+
+model KostenPosition {
+  id             String       @id @default(cuid())
+  kostenstelle   Kostenstelle @relation(fields: [kostenstelleId], references: [id], onDelete: Cascade)
+  kostenstelleId String
+  bezeichnung    String
+  menge          Float?
+  einheit        String?
+  einheitspreis  Float?
+  betrag         Float        @default(0)
+  datum          DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@map("kosten_positionen")
+}
+
+// ─── Ausschreibung ────────────────────────────────────────────────────────────
+
+enum AusschreibungStatus {
+  OFFEN
+  IN_PRUEFUNG
+  VERGEBEN
+  ABGESCHLOSSEN
+}
+
+model Ausschreibung {
+  id          String              @id @default(cuid())
+  projekt     Projekt             @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String
+  gewerk      String
+  beschreibung String?
+  status      AusschreibungStatus @default(OFFEN)
+  frist       DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  angebote    Angebot[]
+
+  @@map("ausschreibungen")
+}
+
+model Angebot {
+  id              String        @id @default(cuid())
+  ausschreibung   Ausschreibung @relation(fields: [ausschreibungId], references: [id], onDelete: Cascade)
+  ausschreibungId String
+  firmaName       String
+  firmaAdresse    String?
+  betrag          Float
+  bewertung       Int?          // 0-100 Punkte
+  notizen         String?
+  vergeben        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+
+  @@map("angebote")
+}
+
+// ─── Termine & Meilensteine ───────────────────────────────────────────────────
+
+enum MeilensteinStatus {
+  OFFEN
+  IN_ARBEIT
+  ERLEDIGT
+  IN_VERZUG
+}
+
+model Meilenstein {
+  id          String            @id @default(cuid())
+  projekt     Projekt           @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String
+  bezeichnung String
+  datum       DateTime
+  status      MeilensteinStatus @default(OFFEN)
+  beschreibung String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("meilensteine")
+}
+
+// ─── Risiken ──────────────────────────────────────────────────────────────────
+
+enum RisikoWahrscheinlichkeit {
+  NIEDRIG
+  MITTEL
+  HOCH
+}
+
+enum RisikoAuswirkung {
+  GERING
+  ERHEBLICH
+  KRITISCH
+}
+
+model Risiko {
+  id               String                  @id @default(cuid())
+  projekt          Projekt                 @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId        String
+  titel            String
+  beschreibung     String?
+  kategorie        String                  // Technisch, Finanziell, etc.
+  wahrscheinlichkeit RisikoWahrscheinlichkeit @default(MITTEL)
+  auswirkung       RisikoAuswirkung        @default(GERING)
+  massnahme        String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  @@map("risiken")
+}
+
+// ─── Kommunikation ────────────────────────────────────────────────────────────
+
+model KommunikationsInfo {
+  id          String   @id @default(cuid())
+  projekt     Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String
+  funktion    String   // Projektleitung, Bauleiter, etc.
+  bkp         String?  // für Buchungen
+  nummer      Int?
+  name        String
+  firma       String?
+  abteilung   String?
+  strasse     String?
+  ort         String?
+  typ         String   @default("team") // team | buchung
+  kontakte    Json     @default("[]")   // [{art: "Intern", wert: "...", icon: "phone"}]
+  createdAt   DateTime @default(now())
+
+  @@map("kommunikations_info")
+}
+
+// ─── Belege & Visum ───────────────────────────────────────────────────────────
+
+enum BelegArt {
+  RECHNUNG_ZAHLUNG
+  BH_RECHNUNG
+  BH_VERTRAG
+  BESTELLUNG
+  COCKPIT
+  CONTROLLING
+}
+
+model Beleg {
+  id          String    @id @default(cuid())
+  projekt     Projekt   @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String
+  bezeichnung String
+  unternehmer String?
+  art         BelegArt
+  belegNr     String?
+  betrag      Float     @default(0)
+  kurztext    String?
+  inklusiveMwst Boolean @default(true)
+  visiert     Boolean   @default(false)
+  visiertAm   DateTime?
+  visiertVon  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("belege")
+}
+
+// ─── Personenverwaltung ───────────────────────────────────────────────────────
+
+enum PersonTyp {
+  PRIVATPERSON
+  FIRMA
+}
+
+enum PersonRolle {
+  BENUTZER
+  LIEFERANT
+  BAUHERR
+  PLANER
+  UNTERNEHMER
+  KONTAKT
+}
+
+enum Sprache {
+  DE
+  FR
+  IT
+  EN
+}
+
+model Person {
+  id                String      @id @default(cuid())
+  typ               PersonTyp   @default(PRIVATPERSON)
+  rollen            PersonRolle[]
+
+  // Persönliche Daten
+  name              String
+  vorname           String?
+  geburtsdatum      DateTime?
+  geschlecht        String?     // M / F / divers
+
+  // Kontakt
+  email             String?
+  telefon           String?
+  telefonMobil      String?
+  webseite          String?
+  sprache           Sprache     @default(DE)
+
+  // Privatadresse
+  strasse           String?
+  plz               String?
+  ort               String?
+  land              String?     @default("CH")
+
+  // Geschäftlich
+  funktion          String?
+  abteilung         String?
+  geschaeftsStrasse String?
+  geschaeftsPlz     String?
+  geschaeftsOrt     String?
+
+  // Firma-spezifisch
+  firmaName         String?     // Falls typ = FIRMA
+  uid               String?     // UID / MwSt-Nummer
+  iban              String?     // Bankverbindung
+
+  // Anstellung bei Firma
+  arbeitgeber       Person?     @relation("Mitarbeiter", fields: [arbeitgeberId], references: [id])
+  arbeitgeberId     String?
+  mitarbeiter       Person[]    @relation("Mitarbeiter")
+
+  // Verknüpfter Benutzer
+  benutzer          Benutzer?
+
+  // Notizen
+  notizen           String?
+
+  // Status
+  aktiv             Boolean     @default(true)
+
+  // Systemfelder
+  mandant           String      @default("Spiderfrog AG")
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Verknüpfungen
+  projekte          ProjektPerson[]
+
+  @@map("personen")
+}
+
+model ProjektPerson {
+  id        String   @id @default(cuid())
+  projekt   Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId String
+  person    Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  personId  String
+  funktion  String?  // Rolle in diesem Projekt
+  createdAt DateTime @default(now())
+
+  @@unique([projektId, personId])
+  @@map("projekt_personen")
+}
+
+// ─── Kostenplanung: Machbarkeit ──────────────────────────────────────────────
+
+model Machbarkeit {
+  id          String   @id @default(cuid())
+  projekt     Projekt  @relation(fields: [projektId], references: [id], onDelete: Cascade)
+  projektId   String   @unique
+
+  // 00 Grundstück
+  grundstueckM2          Float?
+  grundstueckPreisM2     Float?
+  grundstueckNebenkosten Float?   @default(0)  // Prozentsatz Notariat etc.
+
+  // 01 Vorbereitungsarbeiten
+  vorbereitungProzent    Float?   @default(0)
+
+  // 02 Gebäude
+  untergrundM3           Float?
+  untergrundPreisM3      Float?
+  hochbauM3              Float?
+  hochbauPreisM3         Float?
+
+  // 03 Innenausbau
+  innenausbauBetrag      Float?   @default(0)
+
+  // 04 Umgebung
+  umgebungM2             Float?
+  umgebungPreisM2        Float?
+
+  // 05 Baunebenkosten
+  baunebenkostenProzent  Float?   @default(0)
+
+  // Kennzahlen
+  bgfM2                  Float?   // Bruttogeschossfläche
+  bri                    Float?   // Bruttorauminhalt m3
+
+  // MwSt
+  mwstSatz               Float?   @default(8.1)  // 8.1 / 3.8 / 0
+
+  // Meta
+  version                Int      @default(1)
+  notizen                String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("machbarkeit")
+}
