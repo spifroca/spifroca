@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const C = {
   accent:  "#0099cc",
@@ -52,18 +52,25 @@ function calc(d: any) {
   return { grundstueck, grundNebenk, pos00, pos01, untergrund, hochbau, pos02, pos03, pos04, sum0004, pos05, total, mwstBetrag, totalMwst, chfM2, chfM3 };
 }
 
-// ── Ausgelagerter Input – verhindert Fokus-Verlust bei Re-Render ─────────────
+// ── NumInput: lokaler State verhindert Re-Render-Fokus-Verlust ───────────────
 function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string) => void; unit?: string }) {
+  const [local, setLocal] = React.useState(value ?? "");
+
+  // Externe Wertänderung (z.B. IFC-Import) übernehmen
+  React.useEffect(() => {
+    setLocal(value ?? "");
+  }, [value]);
+
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
       <input
         type="number"
-        value={value}
-        onChange={e => onChange(e.target.value)}
+        value={local}
+        onChange={e => setLocal(e.target.value)}
+        onBlur={e => onChange(e.target.value)}
         placeholder="0"
         style={{ width: 110, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
-        onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #bbb"}
       />
       {unit && <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{unit}</span>}
     </div>
