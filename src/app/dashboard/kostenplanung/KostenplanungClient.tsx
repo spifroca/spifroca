@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
+import { useProjekt } from "@/lib/projektContext";
 
 const C = {
   accent:  "#0099cc",
@@ -86,8 +87,9 @@ function NumInput({ value, onChange, unit, tabIndex }: { value: any; onChange: (
 interface Props { projekte: any[]; }
 
 export function KostenplanungClient({ projekte }: Props) {
-  const [sub, setSub]             = useState("Machbarkeit");
-  const [projektId, setProjektId] = useState(projekte[0]?.id || "");
+  const [sub, setSub] = useState("Machbarkeit");
+  const { aktuellesProjekt } = useProjekt();
+  const projektId = aktuellesProjekt?.id || projekte[0]?.id || "";
   const [data, setData]           = useState<any>(EMPTY);
   const [saved, setSaved]         = useState(false);
   const [saving, setSaving]       = useState(false);
@@ -97,7 +99,7 @@ export function KostenplanungClient({ projekte }: Props) {
   const [ifcResult, setIfcResult] = useState<any>(null);
   const fileRef                   = useRef<HTMLInputElement>(null);
 
-  const projekt = projekte.find(p => p.id === projektId);
+  const projekt = projekte.find(p => p.id === projektId) || aktuellesProjekt;
   const r       = calc(data);
 
   useEffect(() => {
@@ -572,10 +574,8 @@ export function KostenplanungClient({ projekte }: Props) {
         {/* Header */}
         <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
           <div style={{ background: C.accent, color: C.white, padding: "4px 12px", fontSize: 12, fontWeight: 700, borderRadius: 2 }}>Kostenplanung</div>
-          <select value={projektId} onChange={e => setProjektId(e.target.value)}
-            style={{ padding: "4px 8px", border: `1px solid ${C.border}`, borderRadius: 2, fontSize: 12, background: "#fff", minWidth: 280 }}>
-            {projekte.map(p => <option key={p.id} value={p.id}>{p.nummer} · {p.name}</option>)}
-          </select>
+          {projekt && <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>{projekt.nummer} · {projekt.name}</span>}
+          {!projekt && <span style={{ fontSize: 12, color: "#999", fontStyle: "italic" }}>Kein Projekt gewählt — bitte links ein Projekt auswählen</span>}
           {loading && <span style={{ fontSize: 11, color: "#999" }}>Lädt...</span>}
         </div>
 
