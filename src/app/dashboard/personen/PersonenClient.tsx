@@ -28,7 +28,7 @@ const SPRACHEN = ["DE", "FR", "IT", "EN"];
 const SUB_NAV = [
   "Übersicht", "Persönliche Daten", "Kommunikation", "Adressen",
   "Finanzielle Angaben", "Zahlungsverbindungen", "Rollen & Zuordnung",
-  "Projekte", "Dokumente", "Notizen",
+  "Werkverträge", "Rechnungen", "Dokumente", "Notizen",
 ];
 
 const EMPTY_FORM = {
@@ -222,13 +222,13 @@ export function PersonenClient({ personen: initial }: { personen: any[] }) {
         );
       case "Projekte":
         return (
-          <Section title="Verknüpfte Projekte">
+          <Section title="Werkverträge">
             {p.projekte?.length > 0 ? p.projekte.map((pp: any) => (
               <tr key={pp.id}>
                 <td style={{ padding: "6px 12px", color: C.accent, fontWeight: 700, fontSize: 12, width: 120 }}>{pp.projekt.nummer}</td>
                 <td style={{ padding: "6px 12px", fontSize: 12 }}>{pp.projekt.name} {pp.funktion && <span style={{ color: "#999" }}>· {pp.funktion}</span>}</td>
               </tr>
-            )) : <tr><td colSpan={2} style={{ padding: "10px 12px", color: "#999", fontSize: 12 }}>Keine Projekte verknüpft</td></tr>}
+            )) : <tr><td colSpan={2} style={{ padding: "10px 12px", color: "#999", fontSize: 12 }}>Keine Werkverträge vorhanden</td></tr>}
           </Section>
         );
       case "Notizen":
