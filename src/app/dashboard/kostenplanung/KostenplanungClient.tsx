@@ -52,6 +52,24 @@ function calc(d: any) {
   return { grundstueck, grundNebenk, pos00, pos01, untergrund, hochbau, pos02, pos03, pos04, sum0004, pos05, total, mwstBetrag, totalMwst, chfM2, chfM3 };
 }
 
+// ── Ausgelagerter Input – verhindert Fokus-Verlust bei Re-Render ─────────────
+function NumInput({ value, onChange, unit }: { value: any; onChange: (v: string) => void; unit?: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      <input
+        type="number"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="0"
+        style={{ width: 110, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
+        onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
+        onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #bbb"}
+      />
+      {unit && <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{unit}</span>}
+    </div>
+  );
+}
+
 interface Props { projekte: any[]; }
 
 export function KostenplanungClient({ projekte }: Props) {
@@ -279,22 +297,7 @@ export function KostenplanungClient({ projekte }: Props) {
     a.click(); URL.revokeObjectURL(url);
   };
 
-  // ── Input-Komponenten ─────────────────────────────────────────────────────
-  const N = ({ k, unit, dec = 0 }: { k: string; unit?: string; dec?: number }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-      <input
-        type="number"
-        value={data[k]}
-        onChange={e => set(k, e.target.value)}
-        placeholder="0"
-        step={dec > 0 ? "0.01" : "1"}
-        style={{ width: INPUT_W, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
-        onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
-        onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #bbb"}
-      />
-      {unit && <span style={{ fontSize: 11, color: "#888", whiteSpace: "nowrap" }}>{unit}</span>}
-    </div>
-  );
+
 
   const R = ({ val, highlight = false }: { val: number; highlight?: boolean }) => (
     <div style={{ textAlign: "right", fontWeight: highlight ? 700 : 500, fontSize: highlight ? 13 : 12, color: highlight ? C.accent : "#333", padding: "4px 6px", background: highlight ? "#e8f4ff" : "transparent", borderRadius: 2, minWidth: 140 }}>
@@ -360,35 +363,35 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="00" label="Grundstück" result={r.pos00} />
               <Row pos="" label="Grundstücksfläche" indent result={r.grundstueck}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <N k="grundstueckM2" unit="m²" />
+                  <NumInput value={data["grundstueckM2"]} onChange={v => set("grundstueckM2", v)} unit="m²" />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <N k="grundstueckPreisM2" unit="CHF/m²" />
+                  <NumInput value={data["grundstueckPreisM2"]} onChange={v => set("grundstueckPreisM2", v)} unit="CHF/m²" />
                 </div>
               </Row>
               <Row pos="" label="Nebenkosten Kauf" indent result={r.grundNebenk}>
-                <N k="grundstueckNebenkosten" unit="%" />
+                <NumInput value={data["grundstueckNebenkosten"]} onChange={v => set("grundstueckNebenkosten", v)} unit="%" />
               </Row>
 
               {/* 01 Vorbereitungsarbeiten */}
               <SubRow pos="01" label="Vorbereitungsarbeiten" result={r.pos01} />
               <Row pos="" label="Anteil von Pos. 00" indent result={r.pos01}>
-                <N k="vorbereitungProzent" unit="% von Pos. 00" />
+                <NumInput value={data["vorbereitungProzent"]} onChange={v => set("vorbereitungProzent", v)} unit="% von Pos. 00" />
               </Row>
 
               {/* 02 Gebäude */}
               <SubRow pos="02" label="Gebäude" result={r.pos02} />
               <Row pos="02.1" label="Untergrund / UG" indent result={r.untergrund}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <N k="untergrundM3" unit="m³" />
+                  <NumInput value={data["untergrundM3"]} onChange={v => set("untergrundM3", v)} unit="m³" />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <N k="untergrundPreisM3" unit="CHF/m³" />
+                  <NumInput value={data["untergrundPreisM3"]} onChange={v => set("untergrundPreisM3", v)} unit="CHF/m³" />
                 </div>
               </Row>
               <Row pos="02.2" label="Hochbau / OG" indent result={r.hochbau}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <N k="hochbauM3" unit="m³" />
+                  <NumInput value={data["hochbauM3"]} onChange={v => set("hochbauM3", v)} unit="m³" />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <N k="hochbauPreisM3" unit="CHF/m³" />
+                  <NumInput value={data["hochbauPreisM3"]} onChange={v => set("hochbauPreisM3", v)} unit="CHF/m³" />
                 </div>
               </Row>
 
@@ -396,9 +399,9 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="03" label="Innenausbau" result={r.pos03} />
               <Row pos="" label="Innenausbaufläche" indent result={r.pos03}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <N k="innenausbauM2" unit="m²" />
+                  <NumInput value={data["innenausbauM2"]} onChange={v => set("innenausbauM2", v)} unit="m²" />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <N k="innenausbauPreisM2" unit="CHF/m²" />
+                  <NumInput value={data["innenausbauPreisM2"]} onChange={v => set("innenausbauPreisM2", v)} unit="CHF/m²" />
                 </div>
               </Row>
 
@@ -406,9 +409,9 @@ export function KostenplanungClient({ projekte }: Props) {
               <SubRow pos="04" label="Umgebung" result={r.pos04} />
               <Row pos="" label="Umgebungsfläche" indent result={r.pos04}>
                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <N k="umgebungM2" unit="m²" />
+                  <NumInput value={data["umgebungM2"]} onChange={v => set("umgebungM2", v)} unit="m²" />
                   <span style={{ color: "#ccc", fontSize: 14 }}>×</span>
-                  <N k="umgebungPreisM2" unit="CHF/m²" />
+                  <NumInput value={data["umgebungPreisM2"]} onChange={v => set("umgebungPreisM2", v)} unit="CHF/m²" />
                 </div>
               </Row>
 
@@ -418,7 +421,7 @@ export function KostenplanungClient({ projekte }: Props) {
               {/* 05 Baunebenkosten */}
               <SubRow pos="05" label="Baunebenkosten" result={r.pos05} />
               <Row pos="" label="Anteil von Summe 00–04" indent result={r.pos05}>
-                <N k="baunebenkostenProzent" unit="% von 00–04" />
+                <NumInput value={data["baunebenkostenProzent"]} onChange={v => set("baunebenkostenProzent", v)} unit="% von 00–04" />
               </Row>
 
               {/* Total exkl. MwSt */}
@@ -458,11 +461,11 @@ export function KostenplanungClient({ projekte }: Props) {
           <div style={{ padding: "10px" }}>
             <div style={{ marginBottom: 10 }}>
               <div style={{ fontSize: 11, color: "#666", marginBottom: 3 }}>Bruttogeschossfläche BGF</div>
-              <N k="bgfM2" unit="m²" />
+              <NumInput value={data["bgfM2"]} onChange={v => set("bgfM2", v)} unit="m²" />
             </div>
             <div>
               <div style={{ fontSize: 11, color: "#666", marginBottom: 3 }}>Bruttorauminhalt BRI</div>
-              <N k="bri" unit="m³" />
+              <NumInput value={data["bri"]} onChange={v => set("bri", v)} unit="m³" />
             </div>
           </div>
           {/* IFC-Import Knopf */}
