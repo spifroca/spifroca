@@ -38,6 +38,7 @@ export function DashboardClient({ session, children }: Props) {
   const [results, setResults]     = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showDrop, setShowDrop]   = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const debounceRef               = useState<any>(null);
 
   const { aktuellesProjekt } = useProjekt();
@@ -125,12 +126,8 @@ export function DashboardClient({ session, children }: Props) {
         </div>
         {/* Rechts */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto", flexShrink: 0 }}>
-          <span style={{ fontSize: 11, background: "#333", padding: "2px 8px", borderRadius: 3, color: "#aaa" }}>{ROLLE_LABEL[rolle] || rolle}</span>
-          <span style={{ fontSize: 11, color: "#777" }}>{user?.name}</span>
-          <button onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            style={{ fontSize: 11, color: "#aaa", cursor: "pointer", background: "none", border: "1px solid #555", borderRadius: 3, padding: "2px 8px" }}>
-            Abmelden
-          </button>
+
+
         </div>
       </header>
 
@@ -190,15 +187,49 @@ export function DashboardClient({ session, children }: Props) {
             </>)}
           </nav>
 
-          {/* User */}
-          <div style={{ padding: "10px", borderTop: "1px solid #444", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.white, flexShrink: 0 }}>{initials}</div>
-            {open && (
-              <div style={{ overflow: "hidden" }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: C.white, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
-                <div style={{ fontSize: 10, color: "#888" }}>{user?.email}</div>
-              </div>
+          {/* User Menu */}
+          <div style={{ position: "relative" }}>
+            {userMenuOpen && (
+              <>
+                {/* Backdrop */}
+                <div style={{ position: "fixed", inset: 0, zIndex: 98 }} onClick={() => setUserMenuOpen(false)} />
+                {/* Menu */}
+                <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 8, right: 8, zIndex: 99, background: "#1e1e1e", border: "1px solid #444", borderRadius: 4, boxShadow: "0 -4px 20px #00000066", overflow: "hidden" }}>
+                  <div style={{ padding: "8px 12px", borderBottom: "1px solid #333" }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: C.white }}>{user?.name}</div>
+                    <div style={{ fontSize: 10, color: "#888", marginTop: 1 }}>{user?.email}</div>
+                    <div style={{ fontSize: 10, color: "#555", marginTop: 1 }}>{ROLLE_LABEL[rolle] || rolle}</div>
+                  </div>
+                  {isAdmin && (
+                    <Link href="/dashboard/benutzerverwaltung" onClick={() => setUserMenuOpen(false)}
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", color: "#ccc", textDecoration: "none", fontSize: 12, borderBottom: "1px solid #333" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#2a2a2a"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                      <span style={{ fontSize: 14 }}>🔐</span> Benutzerverwaltung
+                    </Link>
+                  )}
+                  <button onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: "/auth/login" }); }}
+                    style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px", background: "none", border: "none", color: "#f87171", fontSize: 12, cursor: "pointer", textAlign: "left" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#2a2a2a"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+                    <span style={{ fontSize: 14 }}>↩</span> Abmelden
+                  </button>
+                </div>
+              </>
             )}
+            <div onClick={() => setUserMenuOpen(m => !m)}
+              style={{ padding: "10px", borderTop: "1px solid #444", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#333"}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.white, flexShrink: 0 }}>{initials}</div>
+              {open && (
+                <div style={{ overflow: "hidden", flex: 1 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: C.white, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
+                  <div style={{ fontSize: 10, color: "#888" }}>{ROLLE_LABEL[rolle] || rolle}</div>
+                </div>
+              )}
+              {open && <span style={{ fontSize: 10, color: "#666", flexShrink: 0 }}>▲</span>}
+            </div>
           </div>
         </aside>
 

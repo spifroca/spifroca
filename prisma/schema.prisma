@@ -60,51 +60,53 @@ model AuditLog {
 // ─── Projekte ─────────────────────────────────────────────────────────────────
 
 enum ProjektStatus {
-  AKQUISITION
-  OFFERTE
-  IN_VORBEREITUNG
+  VORPROJEKT
+  PLANUNG
   IN_AUSFUEHRUNG
-  IN_ABRECHNUNG
-  GARANTIE_2J
-  GARANTIE_5J
   ABGESCHLOSSEN
+  SISTIERT
 }
 
 model Projekt {
   id            String        @id @default(cuid())
-  nummer        String        @unique // z.B. "16299.00"
+  nummer        String        @unique
   name          String
-  status        ProjektStatus @default(AKQUISITION)
-  gruppe        String?       // Basel, Bern, Zürich, etc.
-  anlage        String?
+  status        ProjektStatus @default(VORPROJEKT)
+  gruppe        String?
   beschreibung  String?
-  
-  // Adressen & Kontakte
-  projektleiter   Benutzer? @relation("Projektleiter", fields: [projektleiterId], references: [id])
-  projektleiterId String?
-  bestellerName   String?
-  bestellerFirma  String?
+
+  // Adresse
+  plz           String?
+  ort           String?
+  kanton        String?
+  land          String?       @default("CH")
+  sprache       String?       @default("deutsch")
+
+  // Verwaltung
+  verwaltungsbeginn  DateTime?
+  verwaltungsende    DateTime?
+  eigentümerId       String?
 
   // Finanzen
-  budgetTotal   Float?
-  budgetVerbraucht Float?
+  budgetGesamt      Float?
+  budgetVerbraucht  Float?
 
-  // Termine
-  startDatum    DateTime?
-  endDatum      DateTime?
-  
+  // Projektleiter
+  projektleiter   Benutzer? @relation("Projektleiter", fields: [projektleiterId], references: [id])
+  projektleiterId String?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   // Beziehungen
-  kostenplanung Kostenstelle[]
-  ausschreibungen Ausschreibung[]
-  meilensteine  Meilenstein[]
-  risiken       Risiko[]
-  kommunikation KommunikationsInfo[]
-  belege        Beleg[]
-  personen      ProjektPerson[]
-  machbarkeit   Machbarkeit?
+  kostenstellen    Kostenstelle[]
+  ausschreibungen  Ausschreibung[]
+  meilensteine     Meilenstein[]
+  risiken          Risiko[]
+  kommunikation    KommunikationsInfo[]
+  belege           Beleg[]
+  personen         ProjektPerson[]
+  machbarkeit      Machbarkeit?
 
   @@map("projekte")
 }

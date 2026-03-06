@@ -53,24 +53,21 @@ function calc(d: any) {
   return { grundstueck, grundNebenk, pos00, pos01, untergrund, hochbau, pos02, pos03, pos04, sum0004, pos05, total, mwstBetrag, totalMwst, chfM2, chfM3 };
 }
 
-// ── NumInput: uncontrolled – Browser übernimmt Tab nativ ─────────────────────
+// ── NumInput: vollständig unkontrolliert, kein Re-Render beim Tippen ──────────
 function NumInput({ value, onChange, unit, tabIndex }: { value: any; onChange: (v: string) => void; unit?: string; tabIndex?: number }) {
   const inputRef = React.useRef<HTMLInputElement>(null);
-
-  // Externen Wert setzen (z.B. IFC-Import) – nur wenn nicht aktiv
+  // Nur bei externem Wert-Update (IFC-Import) DOM direkt setzen
   React.useEffect(() => {
     if (inputRef.current && document.activeElement !== inputRef.current) {
       inputRef.current.value = value == null || value === "" ? "" : String(value);
     }
   }, [value]);
-
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
       <input
         ref={inputRef}
         type="number"
         defaultValue={value == null || value === "" ? "" : String(value)}
-        onChange={e => onChange(e.target.value)}
         placeholder="0"
         tabIndex={tabIndex}
         style={{ width: 110, padding: "4px 8px", border: "1px solid #bbb", borderRadius: 2, fontSize: 12, textAlign: "right", background: "#fffef5", outline: "none" }}
@@ -343,7 +340,8 @@ export function KostenplanungClient({ projekte }: Props) {
   );
 
   const renderMachbarkeit = () => (
-    <div style={{ display: "flex", gap: 14, padding: 14, alignItems: "flex-start" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+    <div style={{ display: "flex", gap: 14, padding: 14, alignItems: "flex-start", flex: 1, overflowY: "auto" }}>
 
       {/* ── Eingabetabelle ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -536,23 +534,25 @@ export function KostenplanungClient({ projekte }: Props) {
           })}
         </div>
 
-        {/* Export & Speichern */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={handleExportPDF}
-              style={{ flex: 1, padding: "7px", background: "#c0392b", color: C.white, border: "none", borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-              📄 PDF
-            </button>
-            <button onClick={handleExportCSV}
-              style={{ flex: 1, padding: "7px", background: "#27ae60", color: C.white, border: "none", borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
-              📊 Excel/CSV
-            </button>
-          </div>
-          <button onClick={handleSave} disabled={saving}
-            style={{ padding: "9px", background: saved ? "#22c55e" : C.accent, color: C.white, border: "none", borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-            {saving ? "Wird gespeichert..." : saved ? "✓ Gespeichert" : "Speichern"}
+      </div>
+      </div>
+
+      {/* ── Footer: Export & Speichern ── */}
+      <div style={{ gridColumn: "1/-1", borderTop: `1px solid ${C.border}`, padding: "8px 14px", background: C.white, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={handleExportPDF}
+            style={{ padding: "5px 14px", background: "#c0392b", color: C.white, border: "none", borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+            📄 PDF
+          </button>
+          <button onClick={handleExportCSV}
+            style={{ padding: "5px 14px", background: "#27ae60", color: C.white, border: "none", borderRadius: 3, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+            📊 Excel/CSV
           </button>
         </div>
+        <button onClick={handleSave} disabled={saving}
+          style={{ padding: "6px 24px", background: saved ? "#22c55e" : C.accent, color: C.white, border: "none", borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          {saving ? "Wird gespeichert..." : saved ? "✓ Gespeichert" : "Speichern"}
+        </button>
       </div>
     </div>
   );
@@ -571,7 +571,8 @@ export function KostenplanungClient({ projekte }: Props) {
 
         {/* Header */}
         <div style={{ background: C.white, borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-          <div style={{ background: C.accent, color: C.white, padding: "4px 12px", fontSize: 12, fontWeight: 700, borderRadius: 2 }}>Kostenplanung</div>
+          <span style={{ fontSize: 15, fontWeight: 800, color: "#333" }}>Kostenplanung</span>
+          {projekt && <span style={{ fontSize: 12, color: "#888" }}>·</span>}
           {projekt && <span style={{ fontSize: 12, color: "#555", fontWeight: 600 }}>{projekt.nummer} · {projekt.name}</span>}
           {!projekt && <span style={{ fontSize: 12, color: "#999", fontStyle: "italic" }}>Kein Projekt gewählt — bitte links ein Projekt auswählen</span>}
           {loading && <span style={{ fontSize: 11, color: "#999" }}>Lädt...</span>}
