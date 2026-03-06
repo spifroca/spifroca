@@ -7,7 +7,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const projekte = await prisma.projekt.findMany({
-    include: { projektleiter: { select: { id: true, name: true, vorname: true } } },
+    include: { projektleiter: { select: { id: true, name: true } } },
     orderBy: { nummer: "desc" },
   });
   return NextResponse.json(projekte);
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         budgetGesamt:     body.budgetGesamt     ? parseFloat(body.budgetGesamt)    : null,
         projektleiterId:  body.projektleiterId  || null,
       },
-      include: { projektleiter: { select: { id: true, name: true, vorname: true } } },
+      include: { projektleiter: { select: { id: true, name: true } } },
     });
     return NextResponse.json(projekt);
   } catch (err: any) {

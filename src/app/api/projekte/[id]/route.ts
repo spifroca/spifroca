@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         budgetGesamt:     body.budgetGesamt     ? parseFloat(body.budgetGesamt)    : null,
         projektleiterId:  body.projektleiterId  || null,
       },
-      include: { projektleiter: { select: { id: true, name: true, vorname: true } } },
+      include: { projektleiter: { select: { id: true, name: true } } },
     });
     return NextResponse.json(projekt);
   } catch (err: any) {
