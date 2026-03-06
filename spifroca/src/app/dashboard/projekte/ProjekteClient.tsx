@@ -76,91 +76,59 @@ function Field({ name, placeholder = "", type = "text", defaultVal = ""}: {
 function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested }: {
   defaultPlz: string; defaultOrt: string; onOrtSuggested: (ort: string) => void;
 }) {
-  const [suggestions, setSuggestions] = useState<{plz: string; ort: string}[]>([]);
-  const [showDrop, setShowDrop] = useState(false);
+  const [sugg, setSugg] = useState<{plz:string;ort:string}[]>([]);
+  const [show, setShow] = useState(false);
+  const plzRef = useRef<HTMLInputElement>(null);
   const ortRef = useRef<HTMLInputElement>(null);
 
-  const handlePlzChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val.length >= 2) {
-      const matches = Object.entries(CH_PLZ)
-        .filter(([p]) => p.startsWith(val))
-        .slice(0, 6)
-        .map(([p, o]) => ({ plz: p, ort: o }));
-      setSuggestions(matches);
-      setShowDrop(matches.length > 0);
-      if (CH_PLZ[val]) {
-        onOrtSuggested(CH_PLZ[val]);
-        if (ortRef.current) ortRef.current.value = CH_PLZ[val];
-      }
-    } else {
-      setShowDrop(false);
-    }
+      const matches = Object.entries(CH_PLZ).filter(([p]) => p.startsWith(val)).slice(0, 6).map(([p,o]) => ({plz:p,ort:o}));
+      setSugg(matches); setShow(matches.length > 0);
+      if (CH_PLZ[val]) { onOrtSuggested(CH_PLZ[val]); if (ortRef.current) ortRef.current.value = CH_PLZ[val]; }
+    } else { setShow(false); }
   };
 
-  const selectSug = (item: {plz: string; ort: string}, plzInput: HTMLInputElement) => {
-    plzInput.value = item.plz;
+  const selectSug = (item: {plz:string;ort:string}) => {
+    if (plzRef.current) plzRef.current.value = item.plz;
     if (ortRef.current) ortRef.current.value = item.ort;
     onOrtSuggested(item.ort);
-    setShowDrop(false);
+    setShow(false);
   };
 
   return (
-    <div style={{ display: "flex", gap: 6, position: "relative" }}>
-      <div style={{ width: 90, position: "relative" }}>
-        <input
-          name="plz"
-          type="text"
-          defaultValue={defaultPlz}
-          placeholder="PLZ"
-          onChange={handlePlzChange}
-          onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+    <div style={{ display:"flex", gap:6, position:"relative" }}>
+      <div style={{ width:90, position:"relative" }}>
+        <input ref={plzRef} name="plz" type="text" defaultValue={defaultPlz} placeholder="PLZ"
+          onChange={handleChange}
+          onBlur={() => setTimeout(() => setShow(false), 150)}
           onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
-          style={{
-            width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
-            fontSize: 12, outline: "none", boxSizing: "border-box" as const
-          }}
+          style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, outline:"none", boxSizing:"border-box" as const }}
         />
-        {showDrop && (
-          <div style={{
-            position: "absolute", top: "100%", left: 0, zIndex: 100, background: "#fff",
-            border: "1px solid #ccc", borderRadius: 2, boxShadow: "0 4px 12px #00000033", minWidth: 220
-          }}>
-            {suggestions.map(s => (
-              <div
-                key={s.plz}
-                onMouseDown={e => {
-                  e.preventDefault();
-                  selectSug(s, (e.currentTarget.closest("div")!.previousElementSibling as HTMLInputElement));
-                }}
-                style={{ padding: "5px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid #f0f0f0" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e8f4ff"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#fff"}
-              >
+        {show && (
+          <div style={{ position:"absolute", top:"100%", left:0, zIndex:100, background:"#fff", border:"1px solid #ccc", borderRadius:2, boxShadow:"0 4px 12px #00000033", minWidth:220 }}>
+            {sugg.map(s => (
+              <div key={s.plz} onMouseDown={e => { e.preventDefault(); selectSug(s); }}
+                style={{ padding:"5px 10px", cursor:"pointer", fontSize:12, borderBottom:"1px solid #f0f0f0" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background="#e8f4ff"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background="#fff"}>
                 <strong>{s.plz}</strong> {s.ort}
               </div>
             ))}
           </div>
         )}
       </div>
-      <input
-        ref={ortRef}
-        name="ort"
-        type="text"
-        defaultValue={defaultOrt}
-        placeholder="Ort"
+      <input ref={ortRef} name="ort" type="text" defaultValue={defaultOrt} placeholder="Ort"
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
         onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #ccc"}
-        style={{
-          flex: 1, padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
-          fontSize: 12, outline: "none", boxSizing: "border-box" as const
-        }}
+        style={{ flex:1, padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, outline:"none", boxSizing:"border-box" as const }}
       />
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 const EMPTY: any = {
   nummer: "", name: "", plz: "", ort: "", kanton: "", land: "CH", sprache: "deutsch",
   projektstart: "", uebergabe: "", eigentümerId: "", gruppe: "", beschreibung: "",
