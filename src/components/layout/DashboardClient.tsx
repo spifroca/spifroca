@@ -126,8 +126,7 @@ export function DashboardClient({ session, children }: Props) {
         </div>
         {/* Rechts */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto", flexShrink: 0 }}>
-          <span style={{ fontSize: 11, background: "#333", padding: "2px 8px", borderRadius: 3, color: "#aaa" }}>{ROLLE_LABEL[rolle] || rolle}</span>
-          <span style={{ fontSize: 11, color: "#777" }}>{user?.name}</span>
+
 
         </div>
       </header>
