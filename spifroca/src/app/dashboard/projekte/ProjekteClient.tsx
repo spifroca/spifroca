@@ -53,8 +53,8 @@ const CH_PLZ: Record<string, string> = {
 };
 
 // ── Stabiles Input: kein Fokus-Verlust, nur blur/enter → parent ───────────────
-function Field({ name, placeholder = "", type = "text", defaultVal = "", tabIdx }: {
-  name: string; placeholder?: string; type?: string; defaultVal?: string; tabIdx?: number;
+function Field({ name, placeholder = "", type = "text", defaultVal = ""}: {
+  name: string; placeholder?: string; type?: string; defaultVal?: string;
 }) {
   return (
     <input
@@ -62,7 +62,6 @@ function Field({ name, placeholder = "", type = "text", defaultVal = "", tabIdx 
       type={type}
       defaultValue={defaultVal}
       placeholder={placeholder}
-      tabIndex={tabIdx}
       style={{
         width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
         fontSize: 12, background: "#fff", boxSizing: "border-box" as const, outline: "none"
@@ -74,9 +73,8 @@ function Field({ name, placeholder = "", type = "text", defaultVal = "", tabIdx 
 }
 
 // ── PLZ mit Autocomplete ──────────────────────────────────────────────────────
-function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested, tabIdxPlz, tabIdxOrt }: {
+function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested }: {
   defaultPlz: string; defaultOrt: string; onOrtSuggested: (ort: string) => void;
-  tabIdxPlz?: number; tabIdxOrt?: number;
 }) {
   const [suggestions, setSuggestions] = useState<{plz: string; ort: string}[]>([]);
   const [showDrop, setShowDrop] = useState(false);
@@ -115,7 +113,6 @@ function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested, tabIdxPlz, tabIdx
           type="text"
           defaultValue={defaultPlz}
           placeholder="PLZ"
-          tabIndex={tabIdxPlz}
           onChange={handlePlzChange}
           onBlur={() => setTimeout(() => setShowDrop(false), 150)}
           onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
@@ -152,7 +149,6 @@ function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested, tabIdxPlz, tabIdx
         type="text"
         defaultValue={defaultOrt}
         placeholder="Ort"
-        tabIndex={tabIdxOrt}
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
         onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #ccc"}
         style={{
@@ -274,12 +270,10 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
     </tr>
   );
 
-  // ✅ FIX: tabIdx prop hinzugefügt für korrekte Tab-Reihenfolge
-  const Sel = ({ k, opts, tabIdx }: { k: string; opts: {v:string;l:string}[]; tabIdx?: number }) => (
+  const Sel = ({ k, opts }: { k: string; opts: {v:string;l:string}[] }) => (
     <select
       value={(selects as any)[k]}
       onChange={e => setSel(k, e.target.value)}
-      tabIndex={tabIdx}
       style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, background: C.white }}
     >
       {opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
@@ -336,39 +330,38 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   {/* ✅ Tab-Reihenfolge: 1→2→3(PLZ)→4(Ort)→5(Kanton)→6(Land)→7(Sprache)→8→9→10→11→12→13→14→15 */}
-                  <FRow label="Nummer *"><Field name="nummer" defaultVal={editProjekt?.nummer||""} placeholder="z.B. 2025-001" tabIdx={1} /></FRow>
-                  <FRow label="Bezeichnung *"><Field name="name" defaultVal={editProjekt?.name||""} placeholder="Projektname" tabIdx={2} /></FRow>
+                  <FRow label="Nummer *"><Field name="nummer" defaultVal={editProjekt?.nummer||""} placeholder="z.B. 2025-001" /></FRow>
+                  <FRow label="Bezeichnung *"><Field name="name" defaultVal={editProjekt?.name||""} placeholder="Projektname" /></FRow>
                   <FRow label="PLZ / Ort">
-                    <PlzOrtField defaultPlz={editProjekt?.plz||""} defaultOrt={editProjekt?.ort||""} onOrtSuggested={setOrtValue} tabIdxPlz={3} tabIdxOrt={4} />
+                    <PlzOrtField defaultPlz={editProjekt?.plz||""} defaultOrt={editProjekt?.ort||""} onOrtSuggested={setOrtValue} />
                   </FRow>
                   <FRow label="Kanton">
-                    <Sel k="kanton" opts={[{v:"",l:"— Kanton —"},...KANTONE.map(k=>({v:k,l:k}))]} tabIdx={5} />
+                    <Sel k="kanton" opts={[{v:"",l:"— Kanton —"},...KANTONE.map(k=>({v:k,l:k}))]} />
                   </FRow>
                   <FRow label="Land">
-                    <Sel k="land" opts={[{v:"CH",l:"CH — Schweiz"},{v:"DE",l:"DE — Deutschland"},{v:"AT",l:"AT — Österreich"},{v:"FR",l:"FR — Frankreich"},{v:"IT",l:"IT — Italien"}]} tabIdx={6} />
+                    <Sel k="land" opts={[{v:"CH",l:"CH — Schweiz"},{v:"DE",l:"DE — Deutschland"},{v:"AT",l:"AT — Österreich"},{v:"FR",l:"FR — Frankreich"},{v:"IT",l:"IT — Italien"}]} />
                   </FRow>
                   <FRow label="Sprache">
-                    <Sel k="sprache" opts={["deutsch","français","italiano","english"].map(s=>({v:s,l:s}))} tabIdx={7} />
+                    <Sel k="sprache" opts={["deutsch","français","italiano","english"].map(s=>({v:s,l:s}))} />
                   </FRow>
-                  <FRow label="Projektstart"><Field name="projektstart" type="date" defaultVal={editProjekt?.verwaltungsbeginn?.substring(0,10)||""} tabIdx={8} /></FRow>
-                  <FRow label="Übergabe"><Field name="uebergabe" type="date" defaultVal={editProjekt?.verwaltungsende?.substring(0,10)||""} tabIdx={9} /></FRow>
+                  <FRow label="Projektstart"><Field name="projektstart" type="date" defaultVal={editProjekt?.verwaltungsbeginn?.substring(0,10)||""} /></FRow>
+                  <FRow label="Übergabe"><Field name="uebergabe" type="date" defaultVal={editProjekt?.verwaltungsende?.substring(0,10)||""} /></FRow>
                   <FRow label="Eigentümer / Bauherr">
-                    <Sel k="eigentümerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]} tabIdx={10} />
+                    <Sel k="eigentümerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]} />
                   </FRow>
                   <FRow label="Status">
-                    <Sel k="status" opts={Object.entries(STATUS_LABEL).map(([v,l])=>({v,l}))} tabIdx={11} />
+                    <Sel k="status" opts={Object.entries(STATUS_LABEL).map(([v,l])=>({v,l}))} />
                   </FRow>
-                  <FRow label="Gruppe / Kategorie"><Field name="gruppe" defaultVal={editProjekt?.gruppe||""} placeholder="z.B. Wohnbau, Gewerbe" tabIdx={12} /></FRow>
-                  <FRow label="Budget gesamt (CHF)"><Field name="budgetGesamt" type="number" defaultVal={editProjekt?.budgetGesamt||""} placeholder="0" tabIdx={13} /></FRow>
+                  <FRow label="Gruppe / Kategorie"><Field name="gruppe" defaultVal={editProjekt?.gruppe||""} placeholder="z.B. Wohnbau, Gewerbe" /></FRow>
+                  <FRow label="Budget gesamt (CHF)"><Field name="budgetGesamt" type="number" defaultVal={editProjekt?.budgetGesamt||""} placeholder="0" /></FRow>
                   <FRow label="Projektleiter">
-                    <Sel k="projektleiterId" opts={[{v:"",l:"— Auswählen —"},...personen.filter((p:any)=>p.typ==="PRIVATPERSON").map((p:any)=>({v:p.id,l:`${p.vorname||""} ${p.name}`.trim()}))} tabIdx={14} />
+                    <Sel k="projektleiterId" opts={[{v:"",l:"— Auswählen —"},...personen.filter((p:any)=>p.typ==="PRIVATPERSON").map((p:any)=>({v:p.id,l:`${p.vorname||""} ${p.name}`.trim()}))} />
                   </FRow>
                   <FRow label="Beschreibung">
                     <textarea
                       name="beschreibung"
                       defaultValue={editProjekt?.beschreibung||""}
                       rows={3}
-                      tabIndex={15}
                       style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" as const, outline: "none" }}
                       onFocus={e => (e.target as HTMLTextAreaElement).style.border = "1px solid #0099cc"}
                       onBlur={e => (e.target as HTMLTextAreaElement).style.border = "1px solid #ccc"}
