@@ -85,7 +85,7 @@ model Projekt {
   // Verwaltung
   verwaltungsbeginn  DateTime?
   verwaltungsende    DateTime?
-  eigentümerId       String?
+  eigentuemerId       String?
 
   // Finanzen
   budgetGesamt      Float?

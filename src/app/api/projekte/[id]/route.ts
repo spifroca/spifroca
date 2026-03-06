@@ -23,7 +23,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         sprache:          body.sprache          || "deutsch",
         verwaltungsbeginn:body.verwaltungsbeginn? new Date(body.verwaltungsbeginn) : null,
         verwaltungsende:  body.verwaltungsende  ? new Date(body.verwaltungsende)   : null,
-        eigentümerId:     body.eigentümerId     || null,
+        eigentuemerId:     body.eigentuemerId     || null,
         budgetGesamt:     body.budgetGesamt     ? parseFloat(body.budgetGesamt)    : null,
         projektleiterId:  body.projektleiterId  || null,
       },

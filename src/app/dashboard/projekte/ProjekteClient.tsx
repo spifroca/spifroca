@@ -91,17 +91,17 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
   const { aktuellesProjekt, setAktuellesProjekt } = useProjekt();
 
   // Selects: kontrolliert, aber keine Text-Inputs → kein Fokus-Problem
-  const [sel, setSel] = useState({ kanton:"", land:"CH", sprache:"deutsch", status:"VORPROJEKT", eigentümerId:"", projektleiterId:"" });
+  const [sel, setSel] = useState({ kanton:"", land:"CH", sprache:"deutsch", status:"VORPROJEKT", eigentuemerId:"", projektleiterId:"" });
   const s = (k:string,v:string) => setSel(p=>({...p,[k]:v}));
 
   const openNew = () => {
     setEdit(null); setError("");
-    setSel({ kanton:"", land:"CH", sprache:"deutsch", status:"VORPROJEKT", eigentümerId:"", projektleiterId:"" });
+    setSel({ kanton:"", land:"CH", sprache:"deutsch", status:"VORPROJEKT", eigentuemerId:"", projektleiterId:"" });
     setFormKey(k=>k+1); setShowForm(true);
   };
   const openEdit = (p:any) => {
     setEdit(p); setError("");
-    setSel({ kanton:p.kanton||"", land:p.land||"CH", sprache:p.sprache||"deutsch", status:p.status||"VORPROJEKT", eigentümerId:p.eigentümerId||"", projektleiterId:p.projektleiterId||"" });
+    setSel({ kanton:p.kanton||"", land:p.land||"CH", sprache:p.sprache||"deutsch", status:p.status||"VORPROJEKT", eigentuemerId:p.eigentuemerId||"", projektleiterId:p.projektleiterId||"" });
     setFormKey(k=>k+1); setShowForm(true);
   };
 
@@ -124,7 +124,7 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
         verwaltungsbeginn:get("projektstart") || null,
         verwaltungsende:  get("uebergabe")    || null,
         ...sel,
-        eigentümerId:  sel.eigentümerId  || null,
+        eigentuemerId:  sel.eigentuemerId  || null,
         projektleiterId:sel.projektleiterId|| null,
       };
       const url    = editProjekt ? `/api/projekte/${editProjekt.id}` : "/api/projekte";
@@ -260,7 +260,7 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
                     <FRow label="Sprache"><Sel k="sprache" opts={["deutsch","français","italiano","english"].map(v=>({v,l:v}))}/></FRow>
                     <FRow label="Projektstart"><F name="projektstart" type="date" dv={editProjekt?.verwaltungsbeginn?.substring(0,10)||""} ti={3}/></FRow>
                     <FRow label="Übergabe"><F name="uebergabe" type="date" dv={editProjekt?.verwaltungsende?.substring(0,10)||""} ti={4}/></FRow>
-                    <FRow label="Eigentümer / Bauherr"><Sel k="eigentümerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]}/></FRow>
+                    <FRow label="Eigentümer / Bauherr"><Sel k="eigentuemerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]}/></FRow>
                     <FRow label="Status"><Sel k="status" opts={Object.entries(STATUS_LABEL).map(([v,l])=>({v,l}))}/></FRow>
                     <FRow label="Gruppe / Kategorie"><F name="gruppe" dv={editProjekt?.gruppe||""} ph="z.B. Wohnbau, Gewerbe" ti={5}/></FRow>
                     <FRow label="Budget gesamt (CHF)"><F name="budgetGesamt" type="number" dv={editProjekt?.budgetGesamt||""} ph="0" ti={6}/></FRow>
