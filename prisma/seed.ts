@@ -75,7 +75,7 @@ async function main() {
       funktion: "Projektleiterin",
       arbeitgeberId: firmaSpiderfrog.id,
       strasse: "Hauptstrasse 22", plz: "5242", ort: "Lupfig", land: "CH",
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 
@@ -89,7 +89,7 @@ async function main() {
       email: "admin@spiderfrog.ch",
       funktion: "System Administrator",
       arbeitgeberId: firmaSpiderfrog.id,
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 
@@ -104,7 +104,7 @@ async function main() {
       telefon: "+41 79 234 56 78",
       funktion: "Architekt",
       arbeitgeberId: firmaSpiderfrog.id,
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 
@@ -119,7 +119,7 @@ async function main() {
       telefon: "+41 41 552 53 60",
       funktion: "Geschäftsführer",
       arbeitgeberId: firmaRealNorth.id,
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 
@@ -134,7 +134,7 @@ async function main() {
       telefon: "+41 56 222 33 45",
       funktion: "Projektleiterin Bau",
       arbeitgeberId: firmaBauAG.id,
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 
@@ -149,7 +149,7 @@ async function main() {
       telefon: "+41 79 345 67 89",
       funktion: "Controller",
       arbeitgeberId: firmaSpiderfrog.id,
-      sprache: "DE",
+      sprache: "deutsch",
     },
   });
 

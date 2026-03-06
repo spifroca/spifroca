@@ -305,13 +305,6 @@ enum PersonRolle {
   KONTAKT
 }
 
-enum Sprache {
-  DE
-  FR
-  IT
-  EN
-}
-
 model Person {
   id                String      @id @default(cuid())
   typ               PersonTyp   @default(PRIVATPERSON)
@@ -328,7 +321,7 @@ model Person {
   telefon           String?
   telefonMobil      String?
   webseite          String?
-  sprache           Sprache     @default(DE)
+  sprache           String?     @default("deutsch")
 
   // Privatadresse
   strasse           String?
