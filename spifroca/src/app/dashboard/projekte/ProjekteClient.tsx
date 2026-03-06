@@ -12,6 +12,7 @@ const STATUS_COLOR: Record<string, string> = {
   VORPROJEKT: "#8b5cf6", PLANUNG: "#0099cc", IN_AUSFUEHRUNG: "#22c55e",
   ABGESCHLOSSEN: "#6b7280", SISTIERT: "#f59e0b",
 };
+
 const KANTONE = ["AG","AI","AR","BE","BL","BS","FR","GE","GL","GR","JU","LU","NE","NW","OW","SG","SH","SO","SZ","TG","TI","UR","VD","VS","ZG","ZH"];
 
 const CH_PLZ: Record<string, string> = {
@@ -62,7 +63,10 @@ function Field({ name, placeholder = "", type = "text", defaultVal = "", tabIdx 
       defaultValue={defaultVal}
       placeholder={placeholder}
       tabIndex={tabIdx}
-      style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, background: "#fff", boxSizing: "border-box" as const, outline: "none" }}
+      style={{
+        width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
+        fontSize: 12, background: "#fff", boxSizing: "border-box" as const, outline: "none"
+      }}
       onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
       onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #ccc"}
     />
@@ -70,8 +74,9 @@ function Field({ name, placeholder = "", type = "text", defaultVal = "", tabIdx 
 }
 
 // ── PLZ mit Autocomplete ──────────────────────────────────────────────────────
-function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested }: {
+function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested, tabIdxPlz, tabIdxOrt }: {
   defaultPlz: string; defaultOrt: string; onOrtSuggested: (ort: string) => void;
+  tabIdxPlz?: number; tabIdxOrt?: number;
 }) {
   const [suggestions, setSuggestions] = useState<{plz: string; ort: string}[]>([]);
   const [showDrop, setShowDrop] = useState(false);
@@ -86,8 +91,13 @@ function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested }: {
         .map(([p, o]) => ({ plz: p, ort: o }));
       setSuggestions(matches);
       setShowDrop(matches.length > 0);
-      if (CH_PLZ[val]) { onOrtSuggested(CH_PLZ[val]); if (ortRef.current) ortRef.current.value = CH_PLZ[val]; }
-    } else { setShowDrop(false); }
+      if (CH_PLZ[val]) {
+        onOrtSuggested(CH_PLZ[val]);
+        if (ortRef.current) ortRef.current.value = CH_PLZ[val];
+      }
+    } else {
+      setShowDrop(false);
+    }
   };
 
   const selectSug = (item: {plz: string; ort: string}, plzInput: HTMLInputElement) => {
@@ -100,51 +110,84 @@ function PlzOrtField({ defaultPlz, defaultOrt, onOrtSuggested }: {
   return (
     <div style={{ display: "flex", gap: 6, position: "relative" }}>
       <div style={{ width: 90, position: "relative" }}>
-        <input name="plz" type="text" defaultValue={defaultPlz} placeholder="PLZ"
+        <input
+          name="plz"
+          type="text"
+          defaultValue={defaultPlz}
+          placeholder="PLZ"
+          tabIndex={tabIdxPlz}
           onChange={handlePlzChange}
           onBlur={() => setTimeout(() => setShowDrop(false), 150)}
           onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
-          style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, outline: "none", boxSizing: "border-box" as const }} />
+          style={{
+            width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
+            fontSize: 12, outline: "none", boxSizing: "border-box" as const
+          }}
+        />
         {showDrop && (
-          <div style={{ position: "absolute", top: "100%", left: 0, zIndex: 100, background: "#fff", border: "1px solid #ccc", borderRadius: 2, boxShadow: "0 4px 12px #00000033", minWidth: 220 }}>
+          <div style={{
+            position: "absolute", top: "100%", left: 0, zIndex: 100, background: "#fff",
+            border: "1px solid #ccc", borderRadius: 2, boxShadow: "0 4px 12px #00000033", minWidth: 220
+          }}>
             {suggestions.map(s => (
-              <div key={s.plz}
-                onMouseDown={e => { e.preventDefault(); selectSug(s, (e.currentTarget.closest("div")!.previousElementSibling as HTMLInputElement)); }}
+              <div
+                key={s.plz}
+                onMouseDown={e => {
+                  e.preventDefault();
+                  selectSug(s, (e.currentTarget.closest("div")!.previousElementSibling as HTMLInputElement));
+                }}
                 style={{ padding: "5px 10px", cursor: "pointer", fontSize: 12, borderBottom: "1px solid #f0f0f0" }}
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e8f4ff"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#fff"}>
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#fff"}
+              >
                 <strong>{s.plz}</strong> {s.ort}
               </div>
             ))}
           </div>
         )}
       </div>
-      <input ref={ortRef} name="ort" type="text" defaultValue={defaultOrt} placeholder="Ort"
+      <input
+        ref={ortRef}
+        name="ort"
+        type="text"
+        defaultValue={defaultOrt}
+        placeholder="Ort"
+        tabIndex={tabIdxOrt}
         onFocus={e => (e.target as HTMLInputElement).style.border = "1px solid #0099cc"}
         onBlur={e => (e.target as HTMLInputElement).style.border = "1px solid #ccc"}
-        style={{ flex: 1, padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, outline: "none", boxSizing: "border-box" as const }} />
+        style={{
+          flex: 1, padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2,
+          fontSize: 12, outline: "none", boxSizing: "border-box" as const
+        }}
+      />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-const EMPTY: any = { nummer: "", name: "", plz: "", ort: "", kanton: "", land: "CH", sprache: "deutsch", projektstart: "", uebergabe: "", eigentümerId: "", gruppe: "", beschreibung: "", budgetGesamt: "", status: "VORPROJEKT", projektleiterId: "" };
+const EMPTY: any = {
+  nummer: "", name: "", plz: "", ort: "", kanton: "", land: "CH", sprache: "deutsch",
+  projektstart: "", uebergabe: "", eigentümerId: "", gruppe: "", beschreibung: "",
+  budgetGesamt: "", status: "VORPROJEKT", projektleiterId: ""
+};
 
 interface Props { projekte: any[]; personen: any[]; session: any; }
 
 export function ProjekteClient({ projekte: initial, personen, session }: Props) {
   const [projekte, setProjekte] = useState(initial);
   const [showForm, setShowForm] = useState(false);
-  const [editProjekt, setEdit]  = useState<any>(null);
-  const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState("");
-  const [formKey, setFormKey]   = useState(0); // forces remount on new/edit
+  const [editProjekt, setEdit] = useState<any>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [formKey, setFormKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
-  const [ortValue, setOrtValue] = useState(""); // for PLZ→Ort suggestion
+  const [ortValue, setOrtValue] = useState("");
   const { aktuellesProjekt, setAktuellesProjekt } = useProjekt();
 
-  // Selects managed separately (they ARE controlled, no focus issue)
-  const [selects, setSelects] = useState({ kanton: "", land: "CH", sprache: "deutsch", status: "VORPROJEKT", eigentümerId: "", projektleiterId: "" });
+  const [selects, setSelects] = useState({
+    kanton: "", land: "CH", sprache: "deutsch", status: "VORPROJEKT",
+    eigentümerId: "", projektleiterId: ""
+  });
   const setSel = (k: string, v: string) => setSelects(s => ({ ...s, [k]: v }));
 
   const openNew = () => {
@@ -155,24 +198,26 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
 
   const openEdit = (p: any) => {
     setEdit(p); setError("");
-    setSelects({ kanton: p.kanton || "", land: p.land || "CH", sprache: p.sprache || "deutsch", status: p.status || "VORPROJEKT", eigentümerId: p.eigentümerId || "", projektleiterId: p.projektleiterId || "" });
+    setSelects({
+      kanton: p.kanton || "", land: p.land || "CH", sprache: p.sprache || "deutsch",
+      status: p.status || "VORPROJEKT", eigentümerId: p.eigentümerId || "", projektleiterId: p.projektleiterId || ""
+    });
     setOrtValue(p.ort || ""); setFormKey(k => k + 1); setShowForm(true);
   };
 
-  // Read all values from DOM form + selects
   const readForm = () => {
     if (!formRef.current) return null;
     const fd = new FormData(formRef.current);
     return {
-      nummer:        (fd.get("nummer")        as string || "").trim(),
-      name:          (fd.get("name")          as string || "").trim(),
-      plz:           (fd.get("plz")           as string || "").trim(),
-      ort:           (fd.get("ort")           as string || ortValue).trim(),
-      gruppe:        (fd.get("gruppe")        as string || "").trim(),
-      beschreibung:  (fd.get("beschreibung")  as string || "").trim(),
-      budgetGesamt:  fd.get("budgetGesamt")   as string || "",
-      projektstart:  fd.get("projektstart")   as string || "",
-      uebergabe:     fd.get("uebergabe")      as string || "",
+      nummer: (fd.get("nummer") as string || "").trim(),
+      name: (fd.get("name") as string || "").trim(),
+      plz: (fd.get("plz") as string || "").trim(),
+      ort: (fd.get("ort") as string || ortValue).trim(),
+      gruppe: (fd.get("gruppe") as string || "").trim(),
+      beschreibung: (fd.get("beschreibung") as string || "").trim(),
+      budgetGesamt: fd.get("budgetGesamt") as string || "",
+      projektstart: fd.get("projektstart") as string || "",
+      uebergabe: fd.get("uebergabe") as string || "",
       ...selects,
     };
   };
@@ -181,20 +226,20 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
     const data = readForm();
     if (!data) return;
     if (!data.nummer) { setError("Bitte Projektnummer eingeben."); return; }
-    if (!data.name)   { setError("Bitte Projektbezeichnung eingeben."); return; }
+    if (!data.name) { setError("Bitte Projektbezeichnung eingeben."); return; }
     setSaving(true); setError("");
     try {
       const payload = {
         ...data,
         verwaltungsbeginn: data.projektstart || null,
-        verwaltungsende:   data.uebergabe    || null,
-        budgetGesamt:      data.budgetGesamt ? parseFloat(data.budgetGesamt) : null,
-        projektleiterId:   data.projektleiterId || null,
-        eigentümerId:      data.eigentümerId    || null,
+        verwaltungsende: data.uebergabe || null,
+        budgetGesamt: data.budgetGesamt ? parseFloat(data.budgetGesamt) : null,
+        projektleiterId: data.projektleiterId || null,
+        eigentümerId: data.eigentümerId || null,
       };
-      const url    = editProjekt ? `/api/projekte/${editProjekt.id}` : "/api/projekte";
+      const url = editProjekt ? `/api/projekte/${editProjekt.id}` : "/api/projekte";
       const method = editProjekt ? "PUT" : "POST";
-      const res    = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (res.ok) {
         const saved = await res.json();
         if (editProjekt) {
@@ -228,16 +273,21 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
       <td style={{ padding: "4px 8px", background: C.white }}>{children}</td>
     </tr>
   );
-  const Sel = ({ k, opts }: { k: string; opts: {v:string;l:string}[] }) => (
-    <select value={(selects as any)[k]} onChange={e => setSel(k, e.target.value)}
-      style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, background: C.white }}>
+
+  // ✅ FIX: tabIdx prop hinzugefügt für korrekte Tab-Reihenfolge
+  const Sel = ({ k, opts, tabIdx }: { k: string; opts: {v:string;l:string}[]; tabIdx?: number }) => (
+    <select
+      value={(selects as any)[k]}
+      onChange={e => setSel(k, e.target.value)}
+      tabIndex={tabIdx}
+      style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, background: C.white }}
+    >
       {opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
     </select>
   );
 
   return (
     <div style={{ display: "flex", height: "100%", overflow: "hidden", fontFamily: "Arial, Helvetica, sans-serif" }}>
-
       {/* ── Liste ── */}
       <div style={{ width: showForm ? 300 : "100%", flexShrink: 0, display: "flex", flexDirection: "column", borderRight: `1px solid ${C.border}`, background: C.white, overflow: "hidden" }}>
         <div style={{ borderBottom: `1px solid ${C.border}`, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -249,7 +299,7 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
           {projekte.map((p, i) => {
-            const isActive  = aktuellesProjekt?.id === p.id;
+            const isActive = aktuellesProjekt?.id === p.id;
             const isEditing = editProjekt?.id === p.id && showForm;
             return (
               <div key={p.id} style={{ padding: "10px 14px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", background: isEditing ? "#e8f4ff" : isActive ? "#f0fdf4" : i%2===0 ? C.white : "#fafafa", borderLeft: isActive ? "3px solid #22c55e" : isEditing ? `3px solid ${C.accent}` : "3px solid transparent" }}>
@@ -281,62 +331,59 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
             <span style={{ fontWeight: 700, fontSize: 13 }}>{editProjekt ? `Projekt bearbeiten — ${editProjekt.nummer}` : "Projekt erfassen"}</span>
             <button onClick={() => setShowForm(false)} style={{ background: "none", border: "none", color: C.white, fontSize: 18, cursor: "pointer" }}>×</button>
           </div>
-
           <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-            {/* key=formKey zwingt React zum Neu-Mounten bei openNew/openEdit */}
-            <form key={formKey} ref={formRef} onSubmit={e => e.preventDefault()}
-              style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 3, overflow: "hidden", maxWidth: 580 }}>
+            <form key={formKey} ref={formRef} onSubmit={e => e.preventDefault()} style={{ background: C.white, border: `1px solid ${C.border}`, borderRadius: 3, overflow: "hidden", maxWidth: 580 }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
+                  {/* ✅ Tab-Reihenfolge: 1→2→3(PLZ)→4(Ort)→5(Kanton)→6(Land)→7(Sprache)→8→9→10→11→12→13→14→15 */}
                   <FRow label="Nummer *"><Field name="nummer" defaultVal={editProjekt?.nummer||""} placeholder="z.B. 2025-001" tabIdx={1} /></FRow>
                   <FRow label="Bezeichnung *"><Field name="name" defaultVal={editProjekt?.name||""} placeholder="Projektname" tabIdx={2} /></FRow>
                   <FRow label="PLZ / Ort">
-                    <PlzOrtField
-                      defaultPlz={editProjekt?.plz||""}
-                      defaultOrt={editProjekt?.ort||""}
-                      onOrtSuggested={setOrtValue}
-                    />
+                    <PlzOrtField defaultPlz={editProjekt?.plz||""} defaultOrt={editProjekt?.ort||""} onOrtSuggested={setOrtValue} tabIdxPlz={3} tabIdxOrt={4} />
                   </FRow>
                   <FRow label="Kanton">
-                    <Sel k="kanton" opts={[{v:"",l:"— Kanton —"},...KANTONE.map(k=>({v:k,l:k}))]} />
+                    <Sel k="kanton" opts={[{v:"",l:"— Kanton —"},...KANTONE.map(k=>({v:k,l:k}))]} tabIdx={5} />
                   </FRow>
                   <FRow label="Land">
-                    <Sel k="land" opts={[{v:"CH",l:"CH — Schweiz"},{v:"DE",l:"DE — Deutschland"},{v:"AT",l:"AT — Österreich"},{v:"FR",l:"FR — Frankreich"},{v:"IT",l:"IT — Italien"}]} />
+                    <Sel k="land" opts={[{v:"CH",l:"CH — Schweiz"},{v:"DE",l:"DE — Deutschland"},{v:"AT",l:"AT — Österreich"},{v:"FR",l:"FR — Frankreich"},{v:"IT",l:"IT — Italien"}]} tabIdx={6} />
                   </FRow>
                   <FRow label="Sprache">
-                    <Sel k="sprache" opts={["deutsch","français","italiano","english"].map(s=>({v:s,l:s}))} />
+                    <Sel k="sprache" opts={["deutsch","français","italiano","english"].map(s=>({v:s,l:s}))} tabIdx={7} />
                   </FRow>
-                  <FRow label="Projektstart"><Field name="projektstart" type="date" defaultVal={editProjekt?.verwaltungsbeginn?.substring(0,10)||""} tabIdx={3} /></FRow>
-                  <FRow label="Übergabe"><Field name="uebergabe" type="date" defaultVal={editProjekt?.verwaltungsende?.substring(0,10)||""} tabIdx={4} /></FRow>
+                  <FRow label="Projektstart"><Field name="projektstart" type="date" defaultVal={editProjekt?.verwaltungsbeginn?.substring(0,10)||""} tabIdx={8} /></FRow>
+                  <FRow label="Übergabe"><Field name="uebergabe" type="date" defaultVal={editProjekt?.verwaltungsende?.substring(0,10)||""} tabIdx={9} /></FRow>
                   <FRow label="Eigentümer / Bauherr">
-                    <Sel k="eigentümerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]} />
+                    <Sel k="eigentümerId" opts={[{v:"",l:"— Auswählen —"},...personen.map((p:any)=>({v:p.id,l:p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim()}))]} tabIdx={10} />
                   </FRow>
                   <FRow label="Status">
-                    <Sel k="status" opts={Object.entries(STATUS_LABEL).map(([v,l])=>({v,l}))} />
+                    <Sel k="status" opts={Object.entries(STATUS_LABEL).map(([v,l])=>({v,l}))} tabIdx={11} />
                   </FRow>
-                  <FRow label="Gruppe / Kategorie"><Field name="gruppe" defaultVal={editProjekt?.gruppe||""} placeholder="z.B. Wohnbau, Gewerbe" tabIdx={5} /></FRow>
-                  <FRow label="Budget gesamt (CHF)"><Field name="budgetGesamt" type="number" defaultVal={editProjekt?.budgetGesamt||""} placeholder="0" tabIdx={6} /></FRow>
+                  <FRow label="Gruppe / Kategorie"><Field name="gruppe" defaultVal={editProjekt?.gruppe||""} placeholder="z.B. Wohnbau, Gewerbe" tabIdx={12} /></FRow>
+                  <FRow label="Budget gesamt (CHF)"><Field name="budgetGesamt" type="number" defaultVal={editProjekt?.budgetGesamt||""} placeholder="0" tabIdx={13} /></FRow>
                   <FRow label="Projektleiter">
-                    <Sel k="projektleiterId" opts={[{v:"",l:"— Auswählen —"},...personen.filter((p:any)=>p.typ==="PRIVATPERSON").map((p:any)=>({v:p.id,l:`${p.vorname||""} ${p.name}`.trim()}))]} />
+                    <Sel k="projektleiterId" opts={[{v:"",l:"— Auswählen —"},...personen.filter((p:any)=>p.typ==="PRIVATPERSON").map((p:any)=>({v:p.id,l:`${p.vorname||""} ${p.name}`.trim()}))} tabIdx={14} />
                   </FRow>
                   <FRow label="Beschreibung">
-                    <textarea name="beschreibung" defaultValue={editProjekt?.beschreibung||""} rows={3}
+                    <textarea
+                      name="beschreibung"
+                      defaultValue={editProjekt?.beschreibung||""}
+                      rows={3}
+                      tabIndex={15}
                       style={{ width: "100%", padding: "4px 8px", border: "1px solid #ccc", borderRadius: 2, fontSize: 12, fontFamily: "inherit", resize: "vertical", boxSizing: "border-box" as const, outline: "none" }}
                       onFocus={e => (e.target as HTMLTextAreaElement).style.border = "1px solid #0099cc"}
-                      onBlur={e => (e.target as HTMLTextAreaElement).style.border = "1px solid #ccc"} />
+                      onBlur={e => (e.target as HTMLTextAreaElement).style.border = "1px solid #ccc"}
+                    />
                   </FRow>
                 </tbody>
               </table>
             </form>
           </div>
-
           {/* Footer */}
           <div style={{ padding: "10px 16px", borderTop: `1px solid ${C.border}`, background: C.white, display: "flex", justifyContent: "space-between", alignItems: "center", flexShrink: 0 }}>
             <div>{error && <span style={{ fontSize: 12, color: "#c0392b", fontWeight: 600 }}>⚠ {error}</span>}</div>
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setShowForm(false)} style={{ padding: "5px 14px", border: `1px solid ${C.border}`, borderRadius: 3, background: C.white, cursor: "pointer", fontSize: 12 }}>Abbrechen</button>
-              <button onClick={handleSave} disabled={saving}
-                style={{ padding: "6px 24px", background: saving ? "#999" : C.accent, color: C.white, border: "none", borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer" }}>
+              <button onClick={handleSave} disabled={saving} style={{ padding: "6px 24px", background: saving ? "#999" : C.accent, color: C.white, border: "none", borderRadius: 3, fontWeight: 700, fontSize: 13, cursor: saving ? "not-allowed" : "pointer" }}>
                 {saving ? "Wird gespeichert..." : "Speichern"}
               </button>
             </div>
