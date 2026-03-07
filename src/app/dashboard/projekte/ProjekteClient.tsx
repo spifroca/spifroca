@@ -192,7 +192,9 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
 
   const Sel = ({k,opts}:{k:string;opts:{v:string;l:string}[]}) => (
     <select value={(sel as any)[k]} onChange={e=>s(k,e.target.value)}
-      style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff" }}>
+      onFocus={e=>(e.target as HTMLSelectElement).style.border="1px solid #0099cc"}
+      onBlur={e=>(e.target as HTMLSelectElement).style.border="1px solid #ccc"}
+      style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff", outline:"none" }}>
       {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
     </select>
   );
