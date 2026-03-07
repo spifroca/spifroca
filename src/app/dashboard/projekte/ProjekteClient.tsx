@@ -1,4 +1,4 @@
-ö"use client";
+"use client";
 import React, { useState, useRef } from "react";
 import { useProjekt } from "@/lib/projektContext";
 
