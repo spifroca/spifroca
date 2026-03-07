@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const C = { accent:"#0099cc", white:"#ffffff", border:"#cccccc", bg:"#f0f0f0", sidebar:"#2d2d2d" };
 const ROLLEN = ["BENUTZER","LIEFERANT","BAUHERR","PLANER","UNTERNEHMER","KONTAKT"];
@@ -68,6 +69,21 @@ export function PersonenClient({ personen: initial, firmen }: Props) {
   const ortRef   = useRef<HTMLInputElement>(null);
   const [rollen, setRollen]       = useState<string[]>([]);
   const [typ, setTyp]             = useState<"PRIVATPERSON"|"FIRMA">("PRIVATPERSON");
+
+  // Auto-select person from URL ?id= param
+  useEffect(() => {
+    const id = searchParams?.get("id");
+    if (id) {
+      const found = personen.find(p => p.id === id);
+      if (found) { setSelected(found); setShowForm(false); }
+    }
+  }, [searchParams, personen]);
+
+  // Sync subPage from URL ?tab= param
+  useEffect(() => {
+    const tab = searchParams?.get("tab");
+    if (tab) setSubPage(tab);
+  }, [searchParams]);
 
   const openNew = () => {
     setEditP(null); setError(""); setRollen([]); setTyp("PRIVATPERSON");
@@ -160,13 +176,13 @@ export function PersonenClient({ personen: initial, firmen }: Props) {
           </div>
           <nav style={{ flex:1, overflowY:"auto", paddingTop:4 }}>
             {SUB_PAGES.map(sp=>(
-              <button key={sp} onClick={()=>setSubPage(sp)}
+              <button key={sp} onClick={()=>{setSubPage(sp);if(selected) router.push(`/dashboard/personen?id=${selected.id}&tab=${sp}`);}}
                 style={{ display:"block", width:"100%", textAlign:"left", padding:"7px 12px", border:"none", background:subPage===sp?C.accent:"transparent", color:subPage===sp?"#fff":"#aaa", fontSize:11, fontWeight:subPage===sp?700:400, cursor:"pointer", borderLeft:subPage===sp?"3px solid #66ccee":"3px solid transparent" }}>
                 {sp}
               </button>
             ))}
           </nav>
-          <button onClick={()=>setSelected(null)} style={{ padding:"8px 10px", background:"none", border:"none", borderTop:"1px solid #444", color:"#888", fontSize:11, cursor:"pointer", textAlign:"left" }}>◀ Zurück zur Liste</button>
+          <button onClick={()=>{setSelected(null);router.push('/dashboard/personen');}} style={{ padding:"8px 10px", background:"none", border:"none", borderTop:"1px solid #444", color:"#888", fontSize:11, cursor:"pointer", textAlign:"left" }}>◀ Zurück zur Liste</button>
         </div>
         {/* Detail-Content */}
         <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden" }}>
@@ -283,7 +299,7 @@ export function PersonenClient({ personen: initial, firmen }: Props) {
                   const isSel = selected?.id===p.id;
                   const name  = p.typ==="FIRMA"?p.firmaName||p.name:`${p.vorname||""} ${p.name}`.trim();
                   return (
-                    <tr key={p.id} onClick={()=>{setSelected(p);setSubPage("Übersicht");setShowForm(false);}}
+                    <tr key={p.id} onClick={()=>{setSelected(p);setSubPage("Übersicht");setShowForm(false);router.push(`/dashboard/personen?id=${p.id}`);}}
                       style={{ borderBottom:"1px solid #f0f0f0", cursor:"pointer", background:isSel?"#e8f4ff":i%2===0?"#fff":"#fafafa", borderLeft:isSel?`3px solid ${C.accent}`:"3px solid transparent" }}
                       onMouseEnter={e=>{if(!isSel)(e.currentTarget as HTMLElement).style.background="#f5f5f5";}}
                       onMouseLeave={e=>{if(!isSel)(e.currentTarget as HTMLElement).style.background=i%2===0?"#fff":"#fafafa";}}>
