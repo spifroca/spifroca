@@ -39,6 +39,9 @@ interface Props { session: Session; children: React.ReactNode; }
 export function DashboardClient({ session, children }: Props) {
   const pathname  = usePathname();
   const router    = useRouter();
+  const _sp = useSearchParams();
+  const personId = _sp?.get("id") || "";
+  const personTab = _sp?.get("tab") || "\u00dcbersicht";
   const user      = session.user as any;
   const rolle     = user?.rolle || "BETRACHTER";
   const isAdmin   = rolle === "ADMINISTRATOR";
