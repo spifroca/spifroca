@@ -56,6 +56,8 @@ interface Props { personen: any[]; firmen: any[]; }
 
 export function PersonenClient({ personen: initial, firmen }: Props) {
   const [personen, setPersonen]   = useState(initial);
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [selected, setSelected]   = useState<any>(null);
   const [subPage, setSubPage]     = useState("Übersicht");
   const [showForm, setShowForm]   = useState(false);
