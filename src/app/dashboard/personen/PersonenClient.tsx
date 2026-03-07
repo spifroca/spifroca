@@ -340,11 +340,17 @@ export function PersonenClient({ personen: initial, firmen }: Props) {
                     <FRow label="Funktion / Rolle"><F name="funktion" dv={editP?.funktion||""} ph="z.B. Projektleiterin" ti={3}/></FRow>
                     {typ==="PRIVATPERSON" && (
                       <FRow label="Arbeitgeber">
-                        <select name="arbeitgeberId" defaultValue={editP?.arbeitgeberId||""}
-                          style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff" }}>
-                          <option value="">— Auswählen —</option>
-                          {firmen.map((f:any)=><option key={f.id} value={f.id}>{f.firmaName||f.name}</option>)}
-                        </select>
+                        <div style={{ position:"relative", width:"100%" }}>
+                          <select name="arbeitgeberId" defaultValue={editP?.arbeitgeberId||""}
+                            onFocus={e=>(e.target as HTMLSelectElement).style.border="1px solid #0099cc"}
+                            onBlur={e=>(e.target as HTMLSelectElement).style.border="1px solid #ccc"}
+                            style={{ width:"100%", padding:"4px 8px", paddingRight:28, border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff", appearance:"none", WebkitAppearance:"none", outline:"none" }}>
+                            <option value="">— Auswählen —</option>
+                            {firmen.map((f:any)=><option key={f.id} value={f.id}>{f.firmaName||f.name}</option>)}
+                          </select>
+                          <span onMouseDown={e=>{e.preventDefault();const s=e.currentTarget.previousElementSibling as HTMLSelectElement;s?.focus();s?.showPicker?.();}}
+                            style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", pointerEvents:"all", cursor:"pointer", fontSize:10, color:"#555", userSelect:"none" }}>▼</span>
+                        </div>
                       </FRow>
                     )}
                     <FRow label="Rollen">
@@ -364,10 +370,16 @@ export function PersonenClient({ personen: initial, firmen }: Props) {
                     <FRow label="Strasse"><F name="strasse" dv={editP?.strasse||""} ti={8}/></FRow>
                     <FRow label="PLZ / Ort"><PlzField dPlz={editP?.plz||""} dOrt={editP?.ort||""} ortRef={ortRef}/></FRow>
                     <FRow label="Land">
-                      <select name="land" defaultValue={editP?.land||"CH"}
-                        style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff" }}>
-                        {[["CH","Schweiz"],["DE","Deutschland"],["AT","Österreich"],["IT","Italien"],["FR","Frankreich"]].map(([v,l])=><option key={v} value={v}>{v} — {l}</option>)}
-                      </select>
+                      <div style={{ position:"relative", width:"100%" }}>
+                        <select name="land" defaultValue={editP?.land||"CH"}
+                          onFocus={e=>(e.target as HTMLSelectElement).style.border="1px solid #0099cc"}
+                          onBlur={e=>(e.target as HTMLSelectElement).style.border="1px solid #ccc"}
+                          style={{ width:"100%", padding:"4px 8px", paddingRight:28, border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff", appearance:"none", WebkitAppearance:"none", outline:"none" }}>
+                          {[["CH","Schweiz"],["DE","Deutschland"],["AT","Österreich"],["IT","Italien"],["FR","Frankreich"]].map(([v,l])=><option key={v} value={v}>{v} — {l}</option>)}
+                        </select>
+                        <span onMouseDown={e=>{e.preventDefault();const s=e.currentTarget.previousElementSibling as HTMLSelectElement;s?.focus();s?.showPicker?.();}}
+                          style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", pointerEvents:"all", cursor:"pointer", fontSize:10, color:"#555", userSelect:"none" }}>▼</span>
+                      </div>
                     </FRow>
                     <FRow label="IBAN"><F name="iban" dv={editP?.iban||""} ph="CH00 0000 0000 0000 0000 0" ti={9}/></FRow>
                     <FRow label="Notizen">
