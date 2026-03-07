@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import Link from "next/link";
@@ -15,7 +15,16 @@ const NAV_ITEMS = [
   { href: "/dashboard/risiken",       label: "Risiken",      icon: "⚡" },
 ];
 const KONTAKT_ITEMS = [
-  { href: "/dashboard/personen",      label: "Kontakte",     icon: "👥" },
+  { href: "/dashboard/personen",      label: "Personen",     icon: "👥" },
+];
+const PERSON_SUB_PAGES = [
+  { key: "Übersicht",         label: "Übersicht",     icon: "📋" },
+  { key: "Persönliche Daten", label: "Pers. Daten",   icon: "👤" },
+  { key: "Kommunikation",     label: "Kommunikation", icon: "📞" },
+  { key: "Adressen",          label: "Adressen",      icon: "📍" },
+  { key: "Rollen",            label: "Rollen",        icon: "🎭" },
+  { key: "Dokumente",         label: "Dokumente",     icon: "📄" },
+  { key: "Notizen",           label: "Notizen",       icon: "📝" },
 ];
 const ADMIN_ITEMS = [
   { href: "/dashboard/benutzerverwaltung", label: "Benutzer",icon: "🔐" },
@@ -58,6 +67,22 @@ export function DashboardClient({ session, children }: Props) {
     }, 250);
   };
 
+  const NavSubLink = ({ href, label, icon, active }: { href: string; label: string; icon: string; active: boolean }) => (
+    <Link href={href} style={{
+      display: "flex", alignItems: "center", gap: 8,
+      padding: open ? "5px 14px 5px 34px" : "5px 0",
+      justifyContent: open ? "flex-start" : "center", marginBottom: 1,
+      color: active ? C.white : "#888", textDecoration: "none",
+      fontWeight: active ? 600 : 400, fontSize: 11,
+      background: active ? "#1a4a5a" : "transparent",
+      borderLeft: active ? "3px solid #66ccee" : "3px solid transparent",
+    }}
+    onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = "#333"; (e.currentTarget as HTMLElement).style.color = "#ccc"; }}}
+    onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#888"; }}}>
+      <span style={{ fontSize: 11, width: 14, textAlign: "center", flexShrink: 0 }}>{icon}</span>
+      {open && <span>{label}</span>}
+    </Link>
+  );
   const NavLink = ({ href, label, icon }: { href: string; label: string; icon: string }) => {
     const active = pathname.startsWith(href);
     return (
@@ -180,6 +205,12 @@ export function DashboardClient({ session, children }: Props) {
             <Sep />
             <Sep label="Kontakte" />
             {KONTAKT_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
+              {pathname.startsWith("/dashboard/personen") && personId && PERSON_SUB_PAGES.map(sp => (
+                <NavSubLink key={sp.key}
+                  href={`/dashboard/personen?id=${personId}&tab=${sp.key}`}
+                  label={sp.label} icon={sp.icon}
+                  active={personTab === sp.key} />
+              ))}
 
           </nav>
 
