@@ -180,11 +180,7 @@ export function DashboardClient({ session, children }: Props) {
             <Sep />
             <Sep label="Kontakte" />
             {KONTAKT_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
-            {isAdmin && (<>
-              <Sep />
-              <Sep label="Admin" />
-              {ADMIN_ITEMS.map(i => <NavLink key={i.href} {...i} />)}
-            </>)}
+
           </nav>
 
           {/* User Menu */}
