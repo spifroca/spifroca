@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     typ:   p.typ === "FIRMA" ? "Firma" : "Person",
     titel: p.typ === "FIRMA" ? p.firmaName || p.name : `${p.vorname || ""} ${p.name}`.trim(),
     sub:   [p.funktion, p.ort].filter(Boolean).join(" · ") || p.email || "",
-    href:  "/dashboard/personen",
+    href:  `/dashboard/personen?id=${p.id}`,
   }));
 
   // Projekte
