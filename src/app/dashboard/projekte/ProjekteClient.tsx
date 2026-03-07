@@ -66,7 +66,7 @@ function PlzField({ dPlz, dOrt, ortRef }: {
             setSugg(m); setShow(m.length>0 && v.length>=2);
             if (CH_PLZ[v] && ortRef.current) ortRef.current.value = CH_PLZ[v];
           }}
-          onBlur={()=>setTimeout(()=>setShow(false),150)}
+          onBlur={e=>{(e.target as HTMLInputElement).style.border="1px solid #ccc"; setTimeout(()=>setShow(false),150)}}
           onFocus={e=>(e.target as HTMLInputElement).style.border="1px solid #0099cc"}
           style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2,
             fontSize:12, outline:"none", boxSizing:"border-box" as const }}
