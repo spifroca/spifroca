@@ -1,4 +1,4 @@
-"use client";
+ö"use client";
 import React, { useState, useRef } from "react";
 import { useProjekt } from "@/lib/projektContext";
 
@@ -190,14 +190,21 @@ export function ProjekteClient({ projekte: initial, personen, session }: Props) 
     </tr>
   );
 
-  const Sel = ({k,opts}:{k:string;opts:{v:string;l:string}[]}) => (
-    <select value={(sel as any)[k]} onChange={e=>s(k,e.target.value)}
-      onFocus={e=>(e.target as HTMLSelectElement).style.border="1px solid #0099cc"}
-      onBlur={e=>(e.target as HTMLSelectElement).style.border="1px solid #ccc"}
-      style={{ width:"100%", padding:"4px 8px", border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff", outline:"none" }}>
-      {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-    </select>
-  );
+  const Sel = ({k,opts}:{k:string;opts:{v:string;l:string}[]}) => {
+    const ref = React.useRef<HTMLSelectElement>(null);
+    return (
+      <div style={{ position:"relative", width:"100%" }}>
+        <select ref={ref} value={(sel as any)[k]} onChange={e=>s(k,e.target.value)}
+          onFocus={e=>(e.target as HTMLSelectElement).style.border="1px solid #0099cc"}
+          onBlur={e=>(e.target as HTMLSelectElement).style.border="1px solid #ccc"}
+          style={{ width:"100%", padding:"4px 8px", paddingRight:28, border:"1px solid #ccc", borderRadius:2, fontSize:12, background:"#fff", outline:"none", appearance:"none", WebkitAppearance:"none" }}>
+          {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+        </select>
+        <span onClick={()=>{ ref.current?.focus(); ref.current?.showPicker?.(); }}
+          style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", pointerEvents:"all", cursor:"pointer", fontSize:10, color:"#555", userSelect:"none" }}>▼</span>
+      </div>
+    );
+  };
 
   const filtered = projekte.filter(p =>
     !filter || p.name?.toLowerCase().includes(filter.toLowerCase()) ||
